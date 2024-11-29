@@ -10,7 +10,7 @@ type TemplateParams map[string]any
 func GenTemplate(templateString string, params TemplateParams) (string, error) {
 	var tpl bytes.Buffer
 
-	tmpl, err := template.New("template").Parse(templateString)
+	tmpl, err := template.New("template").Funcs(templateFuncs).Parse(templateString)
 	if err != nil {
 		return "", err
 	}
