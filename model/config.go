@@ -15,6 +15,7 @@ type Config struct {
 	Middlewares    []Middleware    `yaml:"middlewares"`
 	EndpointGroups []EndpointGroup `yaml:"endpointGroups"`
 	Endpoints      []Endpoint      `yaml:"endpoints"`
+	ServePoints    []ServePoint    `yaml:"serve"`
 }
 
 func ReadConfig() (*Config, error) {

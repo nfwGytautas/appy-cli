@@ -53,3 +53,9 @@ const Endpoint = `
 }
 {{ end }}
 `
+
+const Serve = `
+{{ range .ServePoints }}
+{{ .Group }}.StaticFS("{{ .On }}", gin.Dir({{ .Dir }}, false))
+{{ end }}
+`

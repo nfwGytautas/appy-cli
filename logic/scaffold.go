@@ -35,11 +35,18 @@ func Scaffold() {
 	endpointsContent, err := writeEndpoints(cfg.Endpoints)
 	errorCheckAndPanic(err)
 
+	// Serve
+	serveContent, err := templates.GenTemplate(templates.Serve, templates.TemplateParams{
+		"ServePoints": cfg.ServePoints,
+	})
+	errorCheckAndPanic(err)
+
 	// Final http autogen
 	httpAutogenContent, err := templates.GenTemplate(templates.HttpAutogen, templates.TemplateParams{
 		"Middleware": middlewareContent,
 		"Groups":     groupsContent,
 		"Endpoints":  endpointsContent,
+		"Serve":      serveContent,
 	})
 	errorCheckAndPanic(err)
 	httpAutogenContent = beutifyContent(httpAutogenContent)

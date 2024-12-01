@@ -21,7 +21,12 @@ func (e *Endpoint) ResolveChildren() {
 			e.Children[i].Group = e.Group
 		}
 
-		e.Children[i].Name = e.Name + "/" + e.Children[i].Name
+		if e.Children[i].Name != "" {
+			e.Children[i].Name = e.Name + "/" + e.Children[i].Name
+		} else {
+			e.Children[i].Name = e.Name
+		}
+
 		e.Children[i].ResolveChildren()
 	}
 }
