@@ -1,89 +1,58 @@
 package logic
 
 import (
-	"github.com/nfwGytautas/appy-cli/model"
+	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/nfwGytautas/appy-cli/templates"
 )
 
 func Scaffold() {
-	cfg, err := model.ReadConfig()
-	errorCheckAndPanic(err)
+	var err error
 
-	// Create appy folder if not exists
-	err = ensureDirectory(".appy")
-	errorCheckAndPanic(err)
-
-	// Variables
-	variablesContent, err := templates.GenTemplate(templates.VariablesAutogen, templates.TemplateParams{
-		"Variables": cfg.Variables,
-	})
-	errorCheckAndPanic(err)
-
-	// Create middleware
-	middlewareContent, err := templates.GenTemplate(templates.Middleware, templates.TemplateParams{
-		"Middlewares": cfg.Middlewares,
-	})
-	errorCheckAndPanic(err)
-
-	// Create endpoint groups
-	groupsContent, err := templates.GenTemplate(templates.EndpointGroup, templates.TemplateParams{
-		"Groups": cfg.EndpointGroups,
-	})
-	errorCheckAndPanic(err)
-
-	// Endpoints
-	endpointsContent, err := writeEndpoints(cfg.Endpoints)
-	errorCheckAndPanic(err)
-
-	// Serve
-	serveContent, err := templates.GenTemplate(templates.Serve, templates.TemplateParams{
-		"ServePoints": cfg.ServePoints,
-	})
-	errorCheckAndPanic(err)
-
-	// Final http autogen
-	httpAutogenContent, err := templates.GenTemplate(templates.HttpAutogen, templates.TemplateParams{
-		"Middleware": middlewareContent,
-		"Groups":     groupsContent,
-		"Endpoints":  endpointsContent,
-		"Serve":      serveContent,
-	})
-	errorCheckAndPanic(err)
-	httpAutogenContent = beutifyContent(httpAutogenContent)
-
-	// Create files
-	err = createFile(".appy/variables_autogen.go", variablesContent)
-	errorCheckAndPanic(err)
-
-	err = createFile(".appy/http_autogen.go", cfg.ReplaceWithVariables(httpAutogenContent))
-	errorCheckAndPanic(err)
-
-	// Format files
-	err = goPipeline(".appy/http_autogen.go")
-	errorCheckAndPanic(err)
-
-	err = goPipeline(".appy/variables_autogen.go")
-	errorCheckAndPanic(err)
-}
-
-func writeEndpoints(endpoints []model.Endpoint) (string, error) {
-	var content string
-	for _, e := range endpoints {
-		childrenContent, err := writeEndpoints(e.Children)
-		if err != nil {
-			return "", err
-		}
-
-		endpointContent, err := templates.GenTemplate(templates.Endpoint, templates.TemplateParams{
-			"Endpoint":        e,
-			"ChildrenContent": childrenContent,
-		})
-		if err != nil {
-			return "", err
-		}
-
-		content += endpointContent
+	type endpointOpts struct {
+		Method   string
+		Path     string
+		FullType string
 	}
 
-	return content, nil
+	imports := []string{}
+	endpoints := []endpointOpts{}
+
+	// Iterate over 'endpoints/' and check what we have
+	err = walkFilesInDirectory("endpoints", func(path string, filename string) {
+		// Read the first line to get package name
+		lines, err := readFileLines(path)
+		errorCheckAndPanic(err)
+
+		if !strings.Contains(lines[0], "package") {
+			panic("Package not found in file: " + path)
+		}
+
+		// Get package name
+		packageName := strings.Split(lines[0], " ")[1]
+
+		imports = append(imports, fmt.Sprintf("%s \"%s/%s\"", packageName, getGoModule(), filepath.Dir(path)))
+		endpoints = append(endpoints, endpointOpts{
+			Method:   filename,
+			Path:     filepath.Dir(strings.Split(path, "endpoints/")[1]),
+			FullType: fmt.Sprintf("%s.%sEndpoint", packageName, capitalizeFirstLetter(strings.ToLower(filename))),
+		})
+	})
+	errorCheckAndPanic(err)
+
+	// Unique imports
+	imports = uniqueStrings(imports)
+
+	endpointsContent, err := templates.GenTemplate(templates.EndpointsScaffold, templates.TemplateParams{
+		"Imports":   imports,
+		"Endpoints": endpoints,
+	})
+	errorCheckAndPanic(err)
+
+	// Generate the scaffold
+	chainErrorChecks(
+		createFile(".appy/endpoints.go", endpointsContent),
+	)
 }

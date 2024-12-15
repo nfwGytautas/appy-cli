@@ -5,18 +5,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// scaffoldCmd represents the scaffold command
-var scaffoldCmd = &cobra.Command{
-	Use:   "scaffold",
+// initCmd represents the scaffold command
+var initCmd = &cobra.Command{
+	Use:   "init",
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		logic.Scaffold()
+		logic.Init()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(scaffoldCmd)
+	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
 

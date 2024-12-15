@@ -5,18 +5,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// scaffoldCmd represents the scaffold command
-var scaffoldCmd = &cobra.Command{
-	Use:   "scaffold",
-	Short: "",
-	Long:  ``,
+// createCmd represents the scaffold command
+var createCmd = &cobra.Command{
+	Use:       "create [endpoint]",
+	Short:     "",
+	Long:      ``,
+	ValidArgs: []string{"endpoint"},
+	Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
-		logic.Scaffold()
+		logic.Create(args)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(scaffoldCmd)
+	rootCmd.AddCommand(createCmd)
 
 	// Here you will define your flags and configuration settings.
 
