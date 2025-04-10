@@ -22,14 +22,20 @@ const DomainExampleUsecase = //
 
 // Example usecase of your domain
 
-type GetModelUsecase struct {
-	Repo {{.DomainName}}_ports_out.ModelRepository
+import (
+	ports_out "{{.DomainRoot}}/ports/out"
+	ports_in "{{.DomainRoot}}/ports/in"
+)
+
+type {{.UsecaseName}}Usecase struct {
+	Repo ports_out.ModelRepository
 
 	// Add other ports here
 }
 
-func (gmu *GetModelUsecase) Execute(cmd GetModelCommand) (*{{.DomainName}}_model.Model, error) {
-	return gmu.Repo.Get(cmd)
+func (u *{{.UsecaseName}}Usecase) Execute(cmd ports_in.{{.UsecaseName}}Command) error {
+	// Add usecase logic here
+	return nil
 }
 
 `
@@ -37,14 +43,12 @@ func (gmu *GetModelUsecase) Execute(cmd GetModelCommand) (*{{.DomainName}}_model
 const DomainExampleInPort = //
 `package {{.DomainName}}_ports_in
 
-// Example in port of your domain
-
-type GetModelCommand struct {
-	ID string
+type {{.UsecaseName}}Command struct {
+	// Add command fields here
 }
 
-type GetModelInputPort interface {
-	Execute(cmd GetModelCommand) (*{{.DomainName}}_model.Model, error)
+type {{.UsecaseName}}InputPort interface {
+	Execute(cmd {{.UsecaseName}}Command) error
 }
 
 `
@@ -54,8 +58,10 @@ const DomainExampleOutPort = //
 
 // Example out port of your domain
 
+import model "{{.DomainRoot}}/model"
+
 type ModelRepository interface {
-	Save(model *{{.DomainName}}_model.Model) error
+	Save(model *model.Model) error
 }
 
 `
@@ -65,12 +71,17 @@ const DomainExampleInAdapter = //
 
 // Example in adapter of your domain
 
+import (
+	ports_in "{{.DomainRoot}}/ports/in"
+	"net/http"
+)
+
 type HttpHandler struct {
-	Usecase {{.DomainName}}_ports_in.GetModelInputPort
+	Usecase ports_in.ExampleInputPort
 }
 
 func (hh *HttpHandler) Get(w http.ResponseWriter, r *http.Request) {
-	hh.Usecase.Execute({{.DomainName}}_usecase.GetModelCommand{ID: r.URL.Query().Get("id")})
+	hh.Usecase.Execute(ports_in.ExampleCommand{})
 }
 
 `
@@ -80,11 +91,13 @@ const DomainExampleOutAdapter = //
 
 // Example out adapter of your domain
 
+import model "{{.DomainRoot}}/model"
+
 type PostgresRepository struct {
 	// connection ...
 }
 
-func (pr *PostgresRepository) Save(model *{{.DomainName}}_model.Model) error {
+func (pr *PostgresRepository) Save(model *model.Model) error {
 	// Insert into database ...
 	return nil
 }
@@ -96,12 +109,18 @@ const DomainExampleWiring = //
 
 // Example wiring of your domain
 
+import (
+	adapter_in "{{.DomainRoot}}/adapter/in"
+	adapter_out "{{.DomainRoot}}/adapter/out"
+	usecase "{{.DomainRoot}}/usecase"
+)
+
 func Wiring() {
-	repo := {{.DomainName}}_adapter_out.PostgresRepository{}
-	usecase := {{.DomainName}}_usecase.GetModelUsecase{
+	repo := adapter_out.PostgresRepository{}
+	usecase := usecase.GetModelUsecase{
 		Repo: repo,
 	}
-	handler := {{.DomainName}}_adapter_in.HttpHandler{
+	handler := adapter_in.HttpHandler{
 		Usecase: usecase,
 	}
 
