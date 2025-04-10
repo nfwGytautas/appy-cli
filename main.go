@@ -24,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if len(entries) == 0 {
+	if len(entries) == 0 || (len(entries) == 1 && entries[0].Name() == ".git") {
 		fmt.Println("Empty project. Scaffolding...")
 		scaffold()
 	}
