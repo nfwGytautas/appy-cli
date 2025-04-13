@@ -5,12 +5,12 @@ const DomainExampleModel = //
 
 // Example model of your domain
 
-type Model struct {
+type {{TitleString .DomainName}} struct {
 	ID string
 }
 
-func NewModel(id string) *Model {
-	return &Model{
+func New{{TitleString .DomainName}}(id string) *{{TitleString .DomainName}} {
+	return &{{TitleString .DomainName}}{
 		ID: id,
 	}
 }
@@ -27,7 +27,7 @@ import (
 )
 
 type {{.UsecaseName}}Usecase struct {
-	Repo ports.ModelRepository
+	Repo ports.{{TitleString .DomainName}}RepositoryOutputPort
 
 	// Add other ports here
 }
@@ -62,7 +62,7 @@ const DomainExampleOutPort = //
 import model "{{.DomainRoot}}/model"
 
 type {{TitleString .DomainName}}RepositoryOutputPort interface {
-	Save(model *model.Model) error
+	Save(model *model.{{TitleString .DomainName}}) error
 }
 
 `
