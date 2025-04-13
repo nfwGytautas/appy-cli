@@ -18,6 +18,7 @@ A CLI tool for working with appy
 - Added watching functionality
 - Added automatic scaffolding for empty projects
 - Added templates for usecase and input port
+- Added automatic 3rd party provider integration
 
 #### Bugfixes
 

@@ -6,18 +6,15 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/nfwGytautas/appy-cli/scaffolds"
+	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
 	watchers_shared "github.com/nfwGytautas/appy-cli/watchers/shared"
 )
 
-var domainWatchers map[string]*utils.Watcher
+var domainWatchers map[string]*utils.Watcher = make(map[string]*utils.Watcher)
 
 func Watch() error {
-	err := watchers_shared.WatchRepositories()
-	if err != nil {
-		return err
-	}
-
 	domainsWatcher, err := utils.NewWatcher("domains/", onDomainEvent)
 	if err != nil {
 		return err
@@ -69,6 +66,20 @@ func onDomainEvent(event fsnotify.Event) {
 	}
 
 	if event.Op&fsnotify.Create == fsnotify.Create {
+		cfg, err := shared.LoadConfig()
+		if err != nil {
+			utils.ConsoleError("Failed to load config: %s (%v)", domain, err)
+			return
+		}
+
+		// Create domain template
+		err = scaffolds.ScaffoldDomain(cfg, domain)
+		if err != nil {
+			utils.ConsoleError("Failed to scaffold domain: %s (%v)", domain, err)
+			return
+		}
+
+		// Add watcher
 		domainWatcher, err := watchers_shared.WatchDomain("domains/" + domain)
 		if err != nil {
 			utils.ConsoleError("Failed to watch domain: %s (%v)", domain, err)

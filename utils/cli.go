@@ -8,6 +8,10 @@ func ClearLines(lineCount int) {
 	}
 }
 
+func ClearEntireConsole() {
+	fmt.Print("\033[H\033[2J")
+}
+
 func ConsoleWarn(format string, a ...any) {
 	fmt.Printf("\033[33m⚠️  Warning\033[0m: %s\n", fmt.Sprintf(format, a...))
 }

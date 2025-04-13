@@ -14,9 +14,8 @@ import (
 )
 
 func main() {
-	fmt.Println("------------------------------------------------------------------------------------------------")
-	fmt.Printf("                                   Appy CLI: %s\n", shared.Version)
-	fmt.Println("------------------------------------------------------------------------------------------------")
+	utils.ClearEntireConsole()
+	printHeader()
 
 	// Check if empty directory
 	entries, err := os.ReadDir(".")
@@ -35,10 +34,19 @@ func main() {
 		return
 	}
 
+	utils.ClearEntireConsole()
+	printHeader()
+
 	watchers.Watch()
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func printHeader() {
+	fmt.Println("------------------------------------------------------------------------------------------------")
+	fmt.Printf("                                   Appy CLI: %s\n", shared.Version)
+	fmt.Println("------------------------------------------------------------------------------------------------")
 }
 
 func scaffold() {
@@ -65,7 +73,7 @@ func scaffold() {
 					return fmt.Errorf("module name is required")
 				}
 
-				matched, err := regexp.MatchString(`^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)?\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+$`, input)
+				matched, err := regexp.MatchString(`^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)?\/[a-zA-Z0-9]+\/[a-zA-Z0-9\-]+$`, input)
 				if err != nil {
 					return err
 				}

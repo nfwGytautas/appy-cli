@@ -6,6 +6,7 @@ import (
 	"github.com/nfwGytautas/appy-cli/shared"
 	watchers_hmd "github.com/nfwGytautas/appy-cli/watchers/hmd"
 	watchers_hss "github.com/nfwGytautas/appy-cli/watchers/hss"
+	watchers_shared "github.com/nfwGytautas/appy-cli/watchers/shared"
 )
 
 func Watch() error {
@@ -15,7 +16,12 @@ func Watch() error {
 	}
 
 	fmt.Println(cfg.Type)
-	fmt.Println("Starting watcher...")
+	fmt.Println("Starting watchers...")
+
+	err = watchers_shared.WatchConfig()
+	if err != nil {
+		return err
+	}
 
 	switch cfg.Type {
 	case shared.ScaffoldHMD:

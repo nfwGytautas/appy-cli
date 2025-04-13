@@ -12,7 +12,6 @@ func scaffoldHMD(cfg *shared.Config) error {
 	cfg.Type = shared.ScaffoldHMD
 
 	tree.AddDirectory("domains/")
-	tree.AddDirectory("repositories/")
 	tree.AddFile("shared/errors.go", templates.ErrorsGo, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{

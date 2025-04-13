@@ -12,7 +12,6 @@ func scaffoldHSS(cfg *shared.Config) error {
 	cfg.Type = shared.ScaffoldHSS
 
 	tree.AddDirectory("domain/")
-	tree.AddDirectory("repositories/")
 	tree.AddFile("shared/errors.go", templates.ErrorsGo, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{

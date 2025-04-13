@@ -1,16 +1,21 @@
 package shared
 
 import (
+	"fmt"
 	"os"
+	"text/template"
 
+	"github.com/nfwGytautas/appy-cli/providers"
+	"github.com/nfwGytautas/appy-cli/templates"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Version string `yaml:"version"`
-	Project string `yaml:"project"`
-	Type    string `yaml:"type"`
-	Module  string `yaml:"module"`
+	Version   string           `yaml:"version"`
+	Project   string           `yaml:"project"`
+	Type      string           `yaml:"type"`
+	Module    string           `yaml:"module"`
+	Providers providers.Config `yaml:"providers"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -49,4 +54,34 @@ func (c *Config) GetDomainsRoot(domainName string) string {
 	}
 
 	return "domain"
+}
+
+func (c *Config) Reconfigure() error {
+	// Providers
+	err := c.Providers.Configure()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Reconfiguring main.go")
+
+	// Adapt main.go
+	f, err := os.OpenFile("main.go", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Write template
+	tmpl := template.Must(template.New("main.go").Parse(templates.MainWithProvidersGo))
+
+	err = tmpl.Execute(f, map[string]any{
+		"Providers": c.Providers.GetEnabledProviders(),
+		"Module":    c.Module,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

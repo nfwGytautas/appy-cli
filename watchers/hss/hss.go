@@ -5,17 +5,11 @@ import (
 )
 
 func Watch() error {
-	err := watchers_shared.WatchRepositories()
+
+	_, err := watchers_shared.WatchDomain("domain/")
 	if err != nil {
 		return err
 	}
-
-	domainWatcher, err := watchers_shared.WatchDomain("domain/")
-	if err != nil {
-		return err
-	}
-
-	domainWatcher.Start()
 
 	return nil
 }
