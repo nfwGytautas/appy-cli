@@ -85,3 +85,8 @@ func (c *Config) Reconfigure() error {
 
 	return nil
 }
+
+func (c *Config) RunHook(hookName string, data any) error {
+	fmt.Println("Running hook", hookName)
+	return c.Providers.RunHook(hookName, data)
+}

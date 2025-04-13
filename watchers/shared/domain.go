@@ -90,7 +90,7 @@ func onDomainUsecaseEvent(cfg *shared.Config, root string, domain string, event 
 		fmt.Println("    + adding associated input port")
 
 		// Create input port
-		f, err = os.Create(root + "/ports/in/" + usecase + ".go")
+		f, err = os.Create(root + "/ports/in_" + usecase + ".go")
 		if err != nil {
 			utils.ConsoleError("Failed to create input port file: %s (%v)", usecase, err)
 			return

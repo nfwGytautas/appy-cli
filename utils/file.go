@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"html/template"
 	"io"
 	"os"
 	"os/exec"
@@ -84,7 +83,7 @@ func (g *GeneratedFileTree) generateFile(file *generateFileEntry, data any) erro
 	}
 
 	// Write template
-	tmpl := template.Must(template.New(path).Parse(file.template))
+	tmpl := NewTemplate(file.template)
 
 	err = tmpl.Execute(f, data)
 	if err != nil {

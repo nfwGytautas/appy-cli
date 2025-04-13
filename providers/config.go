@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nfwGytautas/appy-cli/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,6 +29,12 @@ type Provider struct {
 	Description    string `yaml:"description"`
 	ProviderAtRoot bool   `yaml:"atRootLevel"`
 	Enabled        bool   `yaml:"enabled"`
+	Hooks          []Hook `yaml:"hooks"`
+}
+
+type Hook struct {
+	Name   string `yaml:"name"`
+	Action string `yaml:"action"`
 }
 
 func (c *Config) GetEnabledProviders() []Provider {
@@ -154,13 +161,37 @@ func (c *Config) Configure() error {
 	return nil
 }
 
+func (c *Config) RunHook(hookName string, data any) error {
+	for _, provider := range c.Providers {
+		for _, hook := range provider.Hooks {
+			if hook.Name == hookName {
+				return hook.Run(&provider, data)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Config) registerProvider(provider Provider) {
+	log.Println("Registering provider", provider.Name)
+	for _, existingProvider := range c.Providers {
+		if existingProvider.Name == provider.Name {
+			return
+		}
+	}
+
+	fmt.Printf("Registered provider '%s'\n", provider.Name)
+	c.Providers = append(c.Providers, provider)
+}
+
 func (p *Provider) Configure() error {
-	// Check if provider is already configured
-	if p.IsConfigured() {
+	if !p.Enabled {
 		return nil
 	}
 
-	if !p.Enabled {
+	// Check if provider is already configured
+	if p.IsConfigured() {
 		return nil
 	}
 
@@ -220,14 +251,88 @@ func (p *Provider) IsConfigured() bool {
 	return err == nil
 }
 
-func (c *Config) registerProvider(provider Provider) {
-	log.Println("Registering provider", provider.Name)
-	for _, existingProvider := range c.Providers {
-		if existingProvider.Name == provider.Name {
-			return
-		}
+func (h *Hook) Run(provider *Provider, data any) error {
+	if h.Action == "appy copyTemplate" {
+		return h.copyTemplate(provider, data)
 	}
 
-	fmt.Printf("Registered provider '%s'\n", provider.Name)
-	c.Providers = append(c.Providers, provider)
+	// TODO: CLI tools
+
+	return nil
+}
+
+func (h *Hook) copyTemplate(provider *Provider, data any) error {
+	// Get the domain name from the data
+	domainData, ok := data.(map[string]any)
+	if !ok {
+		return fmt.Errorf("invalid data type for domain creation hook")
+	}
+
+	domainName, ok := domainData["DomainName"].(string)
+	if !ok {
+		return fmt.Errorf("domain name not found in hook data")
+	}
+
+	// Source and destination paths
+	sourceDir := filepath.Join(provider.Path, "domain")
+	destDir := filepath.Join("domains", domainName, "adapters", provider.Name)
+
+	// Create destination directory if it doesn't exist
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return fmt.Errorf("failed to create provider directory: %v", err)
+	}
+
+	// Copy the contents
+	err := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip the source directory itself
+		if path == sourceDir {
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return err
+		}
+
+		destPath := filepath.Join(destDir, relPath)
+
+		if info.IsDir() {
+			// Create directory
+			return os.MkdirAll(destPath, info.Mode())
+		}
+
+		// Copy file
+		templateData, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		file, err := os.Create(destPath)
+		if err != nil {
+			return err
+		}
+
+		// Write template
+		tmpl := utils.NewTemplate(string(templateData))
+
+		err = tmpl.Execute(file, data)
+		if err != nil {
+			file.Close()
+			return err
+		}
+		file.Close()
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to copy provider domain files: %v", err)
+	}
+
+	return nil
 }

@@ -40,7 +40,7 @@ func (u *{{.UsecaseName}}Usecase) Execute(cmd ports.{{.UsecaseName}}Command) err
 `
 
 const DomainExampleInPort = //
-`package {{.DomainName}}_ports_in
+`package {{.DomainName}}_ports
 
 // An input port is something that your domain can do
 
@@ -55,13 +55,13 @@ type {{.UsecaseName}}InputPort interface {
 `
 
 const DomainExampleOutPort = //
-`package {{.DomainName}}_ports_out
+`package {{.DomainName}}_ports
 
 // An output port is something that your domain needs
 
 import model "{{.DomainRoot}}/model"
 
-type ModelRepository interface {
+type {{TitleString .DomainName}}RepositoryOutputPort interface {
 	Save(model *model.Model) error
 }
 
