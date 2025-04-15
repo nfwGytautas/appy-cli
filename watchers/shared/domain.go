@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/nfwGytautas/appy-cli/shared"
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 	"golang.org/x/text/cases"
@@ -18,7 +18,7 @@ import (
 func WatchDomain(root string) (*utils.Watcher, error) {
 	domain := filepath.Base(root)
 
-	cfg, err := shared.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func WatchDomain(root string) (*utils.Watcher, error) {
 	return domainWatcher, nil
 }
 
-func onDomainUsecaseEvent(cfg *shared.Config, root string, domain string, event fsnotify.Event) {
+func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, event fsnotify.Event) {
 	// Check if this is a file or directory
 	fileInfo, err := os.Stat(event.Name)
 	if err != nil {

@@ -3,6 +3,7 @@ package watchers
 import (
 	"fmt"
 
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
 	watchers_hmd "github.com/nfwGytautas/appy-cli/watchers/hmd"
 	watchers_hss "github.com/nfwGytautas/appy-cli/watchers/hss"
@@ -10,7 +11,7 @@ import (
 )
 
 func Watch() error {
-	cfg, err := shared.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		return err
 	}

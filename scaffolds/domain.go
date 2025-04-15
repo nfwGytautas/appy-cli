@@ -1,12 +1,13 @@
 package scaffolds
 
 import (
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
-func ScaffoldDomain(cfg *shared.Config, name string) error {
+func ScaffoldDomain(cfg *config.AppyConfig, name string) error {
 	tree := utils.GeneratedFileTree{}
 
 	domainRoot := cfg.GetDomainsRoot(name)

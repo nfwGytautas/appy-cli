@@ -6,8 +6,3 @@ const (
 	ScaffoldHMD = "HMD - Hexagonal  Multi Domain"
 	ScaffoldHSS = "HSS - Hexagonal Single Service"
 )
-
-var KnownProviders = []string{
-	"postgres",
-	"http",
-}

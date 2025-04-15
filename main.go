@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/manifoldco/promptui"
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
@@ -36,6 +37,16 @@ func main() {
 
 	utils.ClearEntireConsole()
 	printHeader()
+
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = cfg.StartProviders()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	watchers.Watch()
 	if err != nil {

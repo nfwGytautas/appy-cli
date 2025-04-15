@@ -1,12 +1,13 @@
 package scaffolds
 
 import (
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
-func scaffoldHMD(cfg *shared.Config) error {
+func scaffoldHMD(cfg *config.AppyConfig) error {
 	tree := utils.GeneratedFileTree{}
 
 	cfg.Type = shared.ScaffoldHMD

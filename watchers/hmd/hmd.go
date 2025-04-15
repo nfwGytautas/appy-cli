@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
-	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
 	watchers_shared "github.com/nfwGytautas/appy-cli/watchers/shared"
 )
@@ -66,7 +66,7 @@ func onDomainEvent(event fsnotify.Event) {
 	}
 
 	if event.Op&fsnotify.Create == fsnotify.Create {
-		cfg, err := shared.LoadConfig()
+		cfg, err := config.LoadConfig()
 		if err != nil {
 			utils.ConsoleError("Failed to load config: %s (%v)", domain, err)
 			return

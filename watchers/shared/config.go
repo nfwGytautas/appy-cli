@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/nfwGytautas/appy-cli/shared"
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
@@ -46,7 +46,7 @@ func onConfigChange() {
 	if currentConfigHash != lastConfigHash {
 		fmt.Println("Config changed")
 
-		cfg, err := shared.LoadConfig()
+		cfg, err := config.LoadConfig()
 		if err != nil {
 			fmt.Println("Error loading config:", err)
 			return

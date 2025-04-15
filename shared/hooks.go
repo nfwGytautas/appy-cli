@@ -1,5 +1,6 @@
 package shared
 
 const (
-	HookOnDomainCreated = "onDomainCreated"
+	HookOnDomainCreated      = "onDomainCreated"
+	HookOnProviderConfigured = "onProviderConfigured"
 )
