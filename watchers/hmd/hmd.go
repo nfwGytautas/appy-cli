@@ -1,7 +1,6 @@
 package watchers_hmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -50,11 +49,11 @@ func onDomainEvent(event fsnotify.Event) {
 	}
 
 	if !fileInfo.IsDir() {
-		utils.ConsoleWarn("./domains/ should consist only of packages, got file")
+		utils.Console.WarnLn("./domains/ should consist only of packages, got file")
 		return
 	}
 
-	fmt.Println("Domain:", event.Name, event.Op)
+	utils.Console.DebugLn("Domain: %s, %s", event.Name, event.Op)
 
 	domain := filepath.Base(event.Name)
 
@@ -68,21 +67,21 @@ func onDomainEvent(event fsnotify.Event) {
 	if event.Op&fsnotify.Create == fsnotify.Create {
 		cfg, err := config.LoadConfig()
 		if err != nil {
-			utils.ConsoleError("Failed to load config: %s (%v)", domain, err)
+			utils.Console.ErrorLn("Failed to load config: %s (%v)", domain, err)
 			return
 		}
 
 		// Create domain template
 		err = scaffolds.ScaffoldDomain(cfg, domain)
 		if err != nil {
-			utils.ConsoleError("Failed to scaffold domain: %s (%v)", domain, err)
+			utils.Console.ErrorLn("Failed to scaffold domain: %s (%v)", domain, err)
 			return
 		}
 
 		// Add watcher
 		domainWatcher, err := watchers_shared.WatchDomain("domains/" + domain)
 		if err != nil {
-			utils.ConsoleError("Failed to watch domain: %s (%v)", domain, err)
+			utils.Console.ErrorLn("Failed to watch domain: %s (%v)", domain, err)
 			return
 		}
 

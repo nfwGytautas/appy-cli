@@ -20,10 +20,10 @@ type Provider struct {
 	Hooks          []Hook    `yaml:"hooks"`
 	Watchers       []Watcher `yaml:"watchers"`
 
-	config *ProvidersConfig `yaml:"-"`
+	repo *Repository `yaml:"-"`
 }
 
-func (p *Provider) Configure(opts ProviderConfigureOpts) error {
+func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 	for _, hook := range p.Hooks {
 		hook.provider = p
 		err := hook.Configure(opts)
@@ -49,7 +49,7 @@ func (p *Provider) Configure(opts ProviderConfigureOpts) error {
 		return nil
 	}
 
-	fmt.Printf("Configuring provider `%s@%s`...\n", p.Name, p.Version)
+	utils.Console.DebugLn("Configuring provider `%s@%s`...", p.Name, p.Version)
 
 	// Copy provider files from repository to providers directory
 	sourceDir := filepath.Join(p.Path, "providers")
@@ -177,6 +177,6 @@ func (p *Provider) StartWatchers() error {
 
 func (p *Provider) ApplyStringSubstitution(str string) string {
 	str = strings.ReplaceAll(str, "${ProviderRoot}", "${Workspace}/"+p.Path)
-	str = p.config.ApplyStringSubstitution(str)
+	str = p.repo.ApplyStringSubstitution(str)
 	return str
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 
@@ -15,49 +15,47 @@ import (
 )
 
 func main() {
-	utils.ClearEntireConsole()
-	printHeader()
+	// Check if verbose flag is set
+	flag.BoolVar(&utils.Verbose, "debug", false, "Debug output")
+	flag.Parse()
+
+	utils.Console.ClearEntireConsole()
 
 	// Check if empty directory
 	entries, err := os.ReadDir(".")
 	if err != nil {
-		log.Fatal(err)
+		utils.Console.Fatal(err)
 	}
 
 	if len(entries) == 0 || (len(entries) == 1 && entries[0].Name() == ".git") {
-		fmt.Println("Empty project. Scaffolding...")
+		utils.Console.InfoLn("Empty project. Scaffolding...")
 		scaffold()
 	}
 
 	// Check if config exists
-	if _, err := os.Stat(".appy/appy.yaml"); os.IsNotExist(err) {
-		fmt.Println(".appy/appy.yaml not found. Either misconfigured or incorrect directory.")
+	if _, err := os.Stat("appy.yaml"); os.IsNotExist(err) {
+		utils.Console.InfoLn("appy.yaml not found. Either misconfigured or incorrect directory.")
 		return
 	}
 
-	utils.ClearEntireConsole()
-	printHeader()
+	utils.Console.ClearEntireConsole()
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal(err)
+		utils.Console.Fatal(err)
 	}
+
+	// TODO: Terminal ui
 
 	err = cfg.StartProviders()
 	if err != nil {
-		log.Fatal(err)
+		utils.Console.Fatal(err)
 	}
 
 	watchers.Watch()
 	if err != nil {
-		log.Fatal(err)
+		utils.Console.Fatal(err)
 	}
-}
-
-func printHeader() {
-	fmt.Println("------------------------------------------------------------------------------------------------")
-	fmt.Printf("                                   Appy CLI: %s\n", shared.Version)
-	fmt.Println("------------------------------------------------------------------------------------------------")
 }
 
 func scaffold() {
@@ -72,10 +70,10 @@ func scaffold() {
 
 		_, result, err := prompt.Run()
 		if err != nil {
-			log.Fatal(err)
+			utils.Console.Fatal(err)
 		}
 
-		utils.ClearLines(2)
+		utils.Console.ClearLines(2)
 
 		promptModule := promptui.Prompt{
 			Label: "Enter module name",
@@ -98,22 +96,22 @@ func scaffold() {
 
 		module, err := promptModule.Run()
 		if err != nil {
-			log.Fatal(err)
+			utils.Console.Fatal(err)
 		}
 
-		fmt.Printf("Scaffolding: %s\n", result)
+		utils.Console.InfoLn("Scaffolding: %s\n", result)
 
 		err = scaffolds.Base(module)
 		if err != nil {
-			log.Fatal(err)
+			utils.Console.Fatal(err)
 		}
 
 		err = scaffolds.Scaffold(result)
 		if err != nil {
-			log.Fatal(err)
+			utils.Console.Fatal(err)
 		}
 
-		fmt.Println("Done!")
+		utils.Console.InfoLn("Done!")
 	}
 
 	{
@@ -126,9 +124,7 @@ func scaffold() {
 
 		_, err := prompt.Run()
 		if err != nil {
-			log.Fatal(err)
+			utils.Console.Fatal(err)
 		}
 	}
-
-	utils.ClearLines(4)
 }

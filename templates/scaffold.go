@@ -5,8 +5,7 @@ const AppyYaml = //
 project: {{.ProjectName}}
 type: {{.Type}}
 module: {{.Module}}
-providers:
-  repositories:
+repositories:
     - url: https://github.com/nfwGytautas/appy-providers
       branch: main
 `

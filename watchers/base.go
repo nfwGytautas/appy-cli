@@ -5,6 +5,7 @@ import (
 
 	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
+	"github.com/nfwGytautas/appy-cli/utils"
 	watchers_hmd "github.com/nfwGytautas/appy-cli/watchers/hmd"
 	watchers_hss "github.com/nfwGytautas/appy-cli/watchers/hss"
 	watchers_shared "github.com/nfwGytautas/appy-cli/watchers/shared"
@@ -16,8 +17,8 @@ func Watch() error {
 		return err
 	}
 
-	fmt.Println(cfg.Type)
-	fmt.Println("Starting watchers...")
+	utils.Console.DebugLn(cfg.Type)
+	utils.Console.DebugLn("Starting watchers...")
 
 	err = watchers_shared.WatchConfig()
 	if err != nil {

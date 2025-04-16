@@ -21,6 +21,7 @@ func Base(module string) error {
 	projectName := filepath.Base(dir)
 
 	tree.AddDirectory("providers/")
+	tree.AddDirectory(".appy/")
 	tree.AddFile("go.mod", templates.GoMod, nil)
 	tree.AddFile("main.go", templates.MainGo, []string{shared.ToolGoFmt})
 	tree.AddFile("wiring.go", templates.WiringGo, []string{shared.ToolGoFmt})
@@ -30,7 +31,7 @@ func Base(module string) error {
 	tree.AddFile(".vscode/Snippets.code-snippets", templates.VscodeSnippets, nil)
 	tree.AddFile(".vscode/settings.json", templates.VscodeSettings, nil)
 	tree.AddFile(".github/build.yaml", templates.GithubBuildYaml, nil)
-	tree.AddFile(".appy/appy.yaml", templates.AppyYaml, nil)
+	tree.AddFile("appy.yaml", templates.AppyYaml, nil)
 
 	err = tree.Generate(map[string]string{
 		"ProjectName": projectName,

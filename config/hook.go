@@ -17,7 +17,7 @@ type Hook struct {
 	provider *Provider `yaml:"-"`
 }
 
-func (h *Hook) Configure(opts ProviderConfigureOpts) error {
+func (h *Hook) Configure(opts RepositoryConfigureOpts) error {
 	for it, action := range h.Actions {
 		h.Actions[it] = h.provider.ApplyStringSubstitution(action)
 	}
@@ -38,10 +38,10 @@ func (h *Hook) Run(data any) error {
 		}
 
 		cmd := exec.Command(strings.Split(action, " ")[0], strings.Split(action, " ")[1:]...)
-		fmt.Println(cmd.String())
+		utils.Console.DebugLn(cmd.String())
 		cmd.Dir = cwd
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		cmd.Stdout = utils.Console.DebugWriter()
+		cmd.Stderr = utils.Console.DebugWriter()
 		err := cmd.Run()
 		if err != nil {
 			return fmt.Errorf("failed to run hook action `%s`: %v", action, err)

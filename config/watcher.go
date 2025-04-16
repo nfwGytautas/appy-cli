@@ -1,11 +1,11 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/nfwGytautas/appy-cli/utils"
 )
 
 type Watcher struct {
@@ -17,7 +17,7 @@ type Watcher struct {
 	watcher  *fsnotify.Watcher `yaml:"-"`
 }
 
-func (w *Watcher) Configure(opts ProviderConfigureOpts) error {
+func (w *Watcher) Configure(opts RepositoryConfigureOpts) error {
 	for it, fs := range w.Fs {
 		w.Fs[it] = w.provider.ApplyStringSubstitution(fs)
 	}
@@ -44,7 +44,7 @@ func (w *Watcher) Start() error {
 	}
 
 	for _, fs := range w.Fs {
-		fmt.Println("attached watcher to ", fs)
+		utils.Console.DebugLn("attached watcher to %s", fs)
 		err = watcher.Add(fs)
 		if err != nil {
 			return err
@@ -98,19 +98,19 @@ func (w *Watcher) onFileEvent(event fsnotify.Event) {
 func (w *Watcher) runActions() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Println("failed to get current working directory: %v", err)
+		utils.Console.ErrorLn("failed to get current working directory: %v", err)
 		return
 	}
 
 	for _, action := range w.Actions {
 		cmd := exec.Command(action)
-		fmt.Println(cmd.String())
+		utils.Console.DebugLn(cmd.String())
 		cmd.Dir = cwd
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err := cmd.Run()
 		if err != nil {
-			fmt.Println("failed to run hook action `%s`: %v", action, err)
+			utils.Console.ErrorLn("failed to run hook action `%s`: %v", action, err)
 			continue
 		}
 	}
