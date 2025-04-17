@@ -120,7 +120,7 @@ func (c *AppyConfig) Reconfigure() error {
 	}
 
 	// Run go mod tidy
-	err = utils.RunCommand(cwd, strings.Split(shared.ToolGoModTidy, " ")...)
+	err = utils.RunCommand(cwd, shared.ToolGoModTidy)
 	if err != nil {
 		return err
 	}

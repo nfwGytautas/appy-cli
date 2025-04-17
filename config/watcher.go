@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"os/exec"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/nfwGytautas/appy-cli/utils"
@@ -44,11 +43,11 @@ func (w *Watcher) Start() error {
 	}
 
 	for _, fs := range w.Fs {
-		utils.Console.DebugLn("attached watcher to %s", fs)
 		err = watcher.Add(fs)
 		if err != nil {
 			return err
 		}
+		utils.Console.DebugLn("attached watcher to %s", fs)
 	}
 
 	w.watcher = watcher
@@ -77,6 +76,10 @@ func (w *Watcher) Restart() error {
 }
 
 func (w *Watcher) onFileEvent(event fsnotify.Event) {
+	if event.Op.Has(fsnotify.Chmod) {
+		return
+	}
+
 	if len(w.EventFilter) > 0 {
 		matched := false
 
@@ -92,6 +95,8 @@ func (w *Watcher) onFileEvent(event fsnotify.Event) {
 		}
 	}
 
+	utils.Console.DebugLn("%s", event.String())
+
 	w.runActions()
 }
 
@@ -103,12 +108,7 @@ func (w *Watcher) runActions() {
 	}
 
 	for _, action := range w.Actions {
-		cmd := exec.Command(action)
-		utils.Console.DebugLn(cmd.String())
-		cmd.Dir = cwd
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
+		err := utils.RunCommand(cwd, action)
 		if err != nil {
 			utils.Console.ErrorLn("failed to run hook action `%s`: %v", action, err)
 			continue

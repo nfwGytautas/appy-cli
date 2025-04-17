@@ -3,9 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/nfwGytautas/appy-cli/utils"
 )
@@ -37,12 +35,7 @@ func (h *Hook) Run(data any) error {
 			return h.copyTemplate(data)
 		}
 
-		cmd := exec.Command(strings.Split(action, " ")[0], strings.Split(action, " ")[1:]...)
-		utils.Console.DebugLn(cmd.String())
-		cmd.Dir = cwd
-		cmd.Stdout = utils.Console.DebugWriter()
-		cmd.Stderr = utils.Console.DebugWriter()
-		err := cmd.Run()
+		err := utils.RunCommand(cwd, action)
 		if err != nil {
 			return fmt.Errorf("failed to run hook action `%s`: %v", action, err)
 		}

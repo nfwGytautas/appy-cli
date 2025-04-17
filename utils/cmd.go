@@ -3,11 +3,11 @@ package utils
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
-func RunCommand(dir string, args ...string) error {
-	// Pull repository
-	cmd := exec.Command(args[0], args[1:]...)
+func RunCommand(dir string, action string) error {
+	cmd := exec.Command(strings.Split(action, " ")[0], strings.Split(action, " ")[1:]...)
 
 	Console.DebugLn(cmd.String())
 

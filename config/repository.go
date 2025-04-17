@@ -53,13 +53,13 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 		utils.Console.DebugLn("Repository `%s` exists, checking out branch `%s`...", r.Url, r.Branch)
 
 		// Checkout branch
-		err = utils.RunCommand(repositoryPath, "git", "checkout", r.Branch)
+		err = utils.RunCommand(repositoryPath, "git checkout "+r.Branch)
 		if err != nil {
 			return fmt.Errorf("failed to checkout branch: (%v)", err)
 		}
 
 		// Pull repository
-		err = utils.RunCommand(repositoryPath, "git", "pull")
+		err = utils.RunCommand(repositoryPath, "git pull")
 		if err != nil {
 			return fmt.Errorf("failed to pull repository: (%v)", err)
 		}
@@ -67,7 +67,7 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 		utils.Console.InfoLn("Repository `%s` does not exist, pulling...", r.Url)
 
 		// Pull repository
-		err = utils.RunCommand("", "git", "clone", "--branch", r.Branch, r.Url, repositoryPath)
+		err = utils.RunCommand("", "git clone --branch "+r.Branch+" "+r.Url+" "+repositoryPath)
 		if err != nil {
 			return fmt.Errorf("failed to pull repository: (%v)", err)
 		}
