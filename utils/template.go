@@ -12,9 +12,24 @@ import (
 func NewTemplate(content string) *template.Template {
 	name := GenerateRandomString(10)
 	tmpl := template.Must(template.New(name).Funcs(template.FuncMap{
-		"TitleString": titleString,
+		"TitleString":        titleString,
+		"HyphenToUnderscore": hyphenToUnderscore,
 	}).Parse(content))
 	return tmpl
+}
+
+func TemplateAString(content string, data any) (string, error) {
+	// Create template
+	tmpl := NewTemplate(content)
+
+	// Execute template
+	var result strings.Builder
+	err := tmpl.Execute(&result, data)
+	if err != nil {
+		return "", err
+	}
+
+	return result.String(), nil
 }
 
 func TemplateAFile(pathIn string, pathOut string, data any) error {
@@ -43,4 +58,8 @@ func TemplateAFile(pathIn string, pathOut string, data any) error {
 
 func titleString(s string) string {
 	return cases.Title(language.English).String(strings.ToLower(s))
+}
+
+func hyphenToUnderscore(s string) string {
+	return strings.ReplaceAll(s, "-", "_")
 }

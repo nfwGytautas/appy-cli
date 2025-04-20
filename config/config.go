@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/templates"
@@ -109,7 +108,7 @@ func (c *AppyConfig) Reconfigure() error {
 	defer f.Close()
 
 	// Write template
-	tmpl := template.Must(template.New("main.go").Parse(templates.MainWithProvidersGo))
+	tmpl := utils.NewTemplate(templates.MainWithProvidersGo)
 
 	err = tmpl.Execute(f, map[string]any{
 		"Providers": enabledProviders,

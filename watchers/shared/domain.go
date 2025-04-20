@@ -1,7 +1,6 @@
 package watchers_shared
 
 import (
-	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,12 +52,14 @@ func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, ev
 	usecase = strings.TrimSuffix(usecase, filepath.Ext(usecase))
 	usecase = strings.ToLower(usecase)
 
-	usecaseName := cases.Title(language.English).String(usecase)
+	usecaseName := strings.ReplaceAll(usecase, "_", " ")
+	usecaseName = cases.Title(language.English).String(usecaseName)
+	usecaseName = strings.ReplaceAll(usecaseName, " ", "")
 
 	domainRoot := cfg.Module + "/" + cfg.GetDomainsRoot(domain)
 
 	if event.Op&fsnotify.Create == fsnotify.Create {
-		utils.Console.DebugLn("New usecase:", usecase)
+		utils.Console.DebugLn("New usecase: %s", usecase)
 
 		utils.Console.DebugLn("    + adding template")
 		// Fill template
@@ -68,7 +69,7 @@ func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, ev
 			return
 		}
 
-		tmpl := template.Must(template.New(usecase).Parse(templates.DomainExampleUsecase))
+		tmpl := utils.NewTemplate(templates.DomainExampleUsecase)
 
 		err = tmpl.Execute(f, map[string]string{
 			"DomainName":  domain,
@@ -96,7 +97,7 @@ func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, ev
 		}
 
 		// Write template
-		tmpl = template.Must(template.New(usecase).Parse(templates.DomainExampleInPort))
+		tmpl = utils.NewTemplate(templates.DomainExampleInPort)
 
 		err = tmpl.Execute(f, map[string]string{
 			"DomainName":  domain,
