@@ -21,6 +21,10 @@ func Base(module string) error {
 	projectName := filepath.Base(dir)
 
 	tree.AddDirectory("providers/")
+	tree.AddDirectory("tests/")
+	tree.AddDirectory("tests/mocks/")
+	tree.AddDirectory("tests/unit/")
+	tree.AddDirectory("tests/integration/")
 	tree.AddDirectory(".appy/")
 	tree.AddFile("go.mod", templates.GoMod, nil)
 	tree.AddFile("main.go", templates.MainGo, []string{shared.ToolGoFmt})

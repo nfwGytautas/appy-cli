@@ -78,6 +78,13 @@ func onDomainEvent(event fsnotify.Event) {
 			return
 		}
 
+		// Create test folder
+		err = os.MkdirAll("tests/"+domain, 0755)
+		if err != nil {
+			utils.Console.ErrorLn("Failed to create test folder: %s (%v)", domain, err)
+			return
+		}
+
 		// Add watcher
 		domainWatcher, err := watchers_shared.WatchDomain("domains/" + domain)
 		if err != nil {
