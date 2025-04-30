@@ -1,4 +1,4 @@
-package watchers_shared
+package project_shared
 
 import (
 	"sync"

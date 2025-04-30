@@ -1,69 +1,39 @@
 package scaffolds
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 
 	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
-	"github.com/nfwGytautas/appy-cli/templates"
-	"github.com/nfwGytautas/appy-cli/utils"
 )
 
-func Base(module string) error {
-	tree := utils.GeneratedFileTree{}
+type ScaffoldFn func(cfg *config.AppyConfig) error
 
+var scaffoldTypes = map[string]ScaffoldFn{
+	shared.ScaffoldHMD: scaffoldHMD,
+}
+
+func Scaffold(module string, scaffoldType string) error {
 	dir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	projectName := filepath.Base(dir)
 
-	tree.AddDirectory("providers/")
-	tree.AddDirectory("tests/")
-	tree.AddDirectory("tests/mocks/")
-	tree.AddDirectory("tests/unit/")
-	tree.AddDirectory("tests/integration/")
-	tree.AddDirectory(".appy/")
-	tree.AddFile("go.mod", templates.GoMod, nil)
-	tree.AddFile("main.go", templates.MainGo, []string{shared.ToolGoFmt})
-	tree.AddFile("wiring.go", templates.WiringGo, []string{shared.ToolGoFmt})
-	tree.AddFile("README.md", templates.ReadmeMd, nil)
-	tree.AddFile("Dockerfile", templates.Dockerfile, nil)
-	tree.AddFile(".gitignore", templates.Gitignore, nil)
-	tree.AddFile(".vscode/Snippets.code-snippets", templates.VscodeSnippets, nil)
-	tree.AddFile(".vscode/settings.json", templates.VscodeSettings, nil)
-	tree.AddFile(".github/build.yaml", templates.GithubBuildYaml, nil)
-	tree.AddFile("appy.yaml", templates.AppyYaml, nil)
-
-	err = tree.Generate(map[string]string{
-		"ProjectName": projectName,
-		"Version":     shared.Version,
-		"Module":      module,
-	})
-	if err != nil {
-		return err
+	cfg := config.AppyConfig{
+		Module:  module,
+		Type:    scaffoldType,
+		Project: filepath.Base(dir),
+		Version: shared.Version,
 	}
 
-	return nil
-}
-
-func Scaffold(scaffoldType string) error {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return err
+	scaffold, exists := scaffoldTypes[scaffoldType]
+	if !exists {
+		return errors.New("invalid scaffold type " + scaffoldType)
 	}
 
-	switch scaffoldType {
-	case shared.ScaffoldHMD:
-		err = scaffoldHMD(cfg)
-	case shared.ScaffoldHSS:
-		err = scaffoldHSS(cfg)
-	default:
-		return fmt.Errorf("invalid type: %s", scaffoldType)
-	}
-
+	err = scaffold(&cfg)
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,17 @@ A CLI tool for working with appy
 
 ## Changelog
 
-### 0.1.0 [2025/xx/xxx]
+### 0.2.0 [2025/xx/xxx]
+
+#### Changes
+
+- Removed HSS
+
+#### Bugfixes
+
+- N/A
+
+### 0.1.0 [2025/04/30]
 
 #### Changes
 

@@ -8,10 +8,10 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/nfwGytautas/appy-cli/config"
+	"github.com/nfwGytautas/appy-cli/project"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
-	"github.com/nfwGytautas/appy-cli/watchers"
 )
 
 func main() {
@@ -29,7 +29,10 @@ func main() {
 
 	if len(entries) == 0 || (len(entries) == 1 && entries[0].Name() == ".git") {
 		utils.Console.InfoLn("Empty project. Scaffolding...")
-		scaffold()
+		err = scaffold()
+		if err != nil {
+			utils.Console.Fatal(err)
+		}
 	}
 
 	// Check if config exists
@@ -52,25 +55,24 @@ func main() {
 		utils.Console.Fatal(err)
 	}
 
-	watchers.Watch()
+	project.Watch()
 	if err != nil {
 		utils.Console.Fatal(err)
 	}
 }
 
-func scaffold() {
+func scaffold() error {
 	{
 		prompt := promptui.Select{
 			Label: "Select an option",
 			Items: []string{
 				shared.ScaffoldHMD,
-				shared.ScaffoldHSS,
 			},
 		}
 
-		_, result, err := prompt.Run()
+		_, scaffoldType, err := prompt.Run()
 		if err != nil {
-			utils.Console.Fatal(err)
+			return err
 		}
 
 		utils.Console.ClearLines(2)
@@ -96,17 +98,10 @@ func scaffold() {
 
 		module, err := promptModule.Run()
 		if err != nil {
-			utils.Console.Fatal(err)
+			return err
 		}
 
-		utils.Console.InfoLn("Scaffolding: %s\n", result)
-
-		err = scaffolds.Base(module)
-		if err != nil {
-			utils.Console.Fatal(err)
-		}
-
-		err = scaffolds.Scaffold(result)
+		err = scaffolds.Scaffold(module, scaffoldType)
 		if err != nil {
 			utils.Console.Fatal(err)
 		}
@@ -124,7 +119,9 @@ func scaffold() {
 
 		_, err := prompt.Run()
 		if err != nil {
-			utils.Console.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
 }

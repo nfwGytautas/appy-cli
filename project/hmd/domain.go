@@ -1,4 +1,4 @@
-package watchers_shared
+package project_hmd
 
 import (
 	"os"
@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func WatchDomain(root string) (*utils.Watcher, error) {
+func watchDomain(root string) (*utils.Watcher, error) {
 	domain := filepath.Base(root)
 
 	cfg, err := config.LoadConfig()
@@ -21,7 +21,7 @@ func WatchDomain(root string) (*utils.Watcher, error) {
 		return nil, err
 	}
 
-	domainWatcher, err := utils.NewWatcher(root+"/usecase/", func(event fsnotify.Event) {
+	domainWatcher, err := utils.NewWatcher(root, func(event fsnotify.Event) {
 		onDomainUsecaseEvent(cfg, root, domain, event)
 	})
 	if err != nil {
@@ -56,8 +56,6 @@ func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, ev
 	usecaseName = cases.Title(language.English).String(usecaseName)
 	usecaseName = strings.ReplaceAll(usecaseName, " ", "")
 
-	domainRoot := cfg.Module + "/" + cfg.GetDomainsRoot(domain)
-
 	if event.Op&fsnotify.Create == fsnotify.Create {
 		utils.Console.DebugLn("New usecase: %s", usecase)
 
@@ -73,7 +71,6 @@ func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, ev
 
 		err = tmpl.Execute(f, map[string]string{
 			"DomainName":  domain,
-			"DomainRoot":  domainRoot,
 			"UsecaseName": usecaseName,
 		})
 		if err != nil {
@@ -84,34 +81,6 @@ func onDomainUsecaseEvent(cfg *config.AppyConfig, root string, domain string, ev
 		err = f.Close()
 		if err != nil {
 			utils.Console.ErrorLn("Failed to close usecase file: %s (%v)", usecase, err)
-			return
-		}
-
-		utils.Console.DebugLn("    + adding associated input port")
-
-		// Create input port
-		f, err = os.Create(root + "/ports/in_" + usecase + ".go")
-		if err != nil {
-			utils.Console.ErrorLn("Failed to create input port file: %s (%v)", usecase, err)
-			return
-		}
-
-		// Write template
-		tmpl = utils.NewTemplate(templates.DomainExampleInPort)
-
-		err = tmpl.Execute(f, map[string]string{
-			"DomainName":  domain,
-			"DomainRoot":  domainRoot,
-			"UsecaseName": usecaseName,
-		})
-		if err != nil {
-			utils.Console.ErrorLn("Failed to execute input port template: %s (%v)", usecase, err)
-			return
-		}
-
-		err = f.Close()
-		if err != nil {
-			utils.Console.ErrorLn("Failed to close input port file: %s (%v)", usecase, err)
 			return
 		}
 	}

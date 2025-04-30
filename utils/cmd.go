@@ -24,3 +24,19 @@ func RunCommand(dir string, action string) error {
 
 	return nil
 }
+
+func RunTools(file string, tools []string) error {
+	for _, tool := range tools {
+		toolArgs := strings.Split(tool, " ")
+		toolArgs = append(toolArgs, file)
+		cmd := exec.Command(toolArgs[0], toolArgs[1:]...)
+		cmd.Stdout = Console.DebugWriter()
+		cmd.Stderr = Console.DebugWriter()
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("failed to run command: %v", err)
+		}
+	}
+
+	return nil
+}

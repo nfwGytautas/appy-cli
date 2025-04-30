@@ -52,14 +52,6 @@ func (c *AppyConfig) Save() error {
 	return nil
 }
 
-func (c *AppyConfig) GetDomainsRoot(domainName string) string {
-	if c.Type == shared.ScaffoldHMD {
-		return "domains/" + domainName
-	}
-
-	return "domain"
-}
-
 func (c *AppyConfig) Reconfigure() error {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -98,21 +90,30 @@ func (c *AppyConfig) Reconfigure() error {
 		enabledProviders = append(enabledProviders, repository.GetEnabledProviders()...)
 	}
 
-	utils.Console.DebugLn("Reconfiguring main.go")
+	utils.Console.DebugLn("Reconfiguring providers")
 
-	// Adapt main.go
-	f, err := os.OpenFile("main.go", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	// Adapt providers
+	f, err := os.OpenFile("providers/providers.go", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
 	// Write template
-	tmpl := utils.NewTemplate(templates.MainWithProvidersGo)
+	tmpl := utils.NewTemplate(templates.ProvidersGo)
 
 	err = tmpl.Execute(f, map[string]any{
 		"Providers": enabledProviders,
 		"Module":    c.Module,
+	})
+	if err != nil {
+		f.Close()
+		return err
+	}
+	f.Close()
+
+	err = utils.RunTools("providers/providers.go", []string{
+		shared.ToolGoImports,
+		shared.ToolGoFmt,
 	})
 	if err != nil {
 		return err

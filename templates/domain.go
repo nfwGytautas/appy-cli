@@ -1,9 +1,16 @@
 package templates
 
+const DomainExampleDomain = //
+`package {{.DomainName}}
+
+// Describe the domain in this file add dependencies that will need adapters, etc.
+
+type {{TitleString .DomainName}}Domain struct {
+}
+`
+
 const DomainExampleModel = //
 `package {{.DomainName}}_model
-
-// Example model of your domain
 
 type {{TitleString .DomainName}} struct {
 	ID string
@@ -14,55 +21,17 @@ func New{{TitleString .DomainName}}(id string) *{{TitleString .DomainName}} {
 		ID: id,
 	}
 }
-
 `
 
 const DomainExampleUsecase = //
-`package {{.DomainName}}_usecase
+`package {{.DomainName}}
 
-// Example usecase of your domain
-
-import (
-	ports "{{.DomainRoot}}/ports"
-)
-
-type {{.UsecaseName}}Usecase struct {
-	Repo ports.{{TitleString .DomainName}}RepositoryOutputPort
-
-	// Add other ports here
+type {{TitleString .UsecaseName}}Args struct {
+	// Add usecase arguments here
 }
 
-func (u *{{.UsecaseName}}Usecase) Execute(cmd ports.{{.UsecaseName}}Command) error {
+func (d *{{TitleString .DomainName}}Domain) {{.UsecaseName}}(args {{TitleString .UsecaseName}}Args) error {
 	// Add usecase logic here
 	return nil
 }
-
-`
-
-const DomainExampleInPort = //
-`package {{.DomainName}}_ports
-
-// An input port is something that your domain can do
-
-type {{.UsecaseName}}Command struct {
-	// Add command fields here
-}
-
-type {{.UsecaseName}}InputPort interface {
-	Execute(cmd {{.UsecaseName}}Command) error
-}
-
-`
-
-const DomainExampleOutPort = //
-`package {{.DomainName}}_ports
-
-// An output port is something that your domain needs
-
-import model "{{.DomainRoot}}/model"
-
-type {{TitleString .DomainName}}RepositoryOutputPort interface {
-	Save(model *model.{{TitleString .DomainName}}) error
-}
-
 `

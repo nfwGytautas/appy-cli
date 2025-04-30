@@ -1,15 +1,18 @@
-package watchers
+package project
 
 import (
 	"fmt"
 
 	"github.com/nfwGytautas/appy-cli/config"
+	project_hmd "github.com/nfwGytautas/appy-cli/project/hmd"
+	project_shared "github.com/nfwGytautas/appy-cli/project/shared"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
-	watchers_hmd "github.com/nfwGytautas/appy-cli/watchers/hmd"
-	watchers_hss "github.com/nfwGytautas/appy-cli/watchers/hss"
-	watchers_shared "github.com/nfwGytautas/appy-cli/watchers/shared"
 )
+
+var projectTypes = map[string]func() error{
+	shared.ScaffoldHMD: project_hmd.Watch,
+}
 
 func Watch() error {
 	cfg, err := config.LoadConfig()
@@ -20,24 +23,19 @@ func Watch() error {
 	utils.Console.DebugLn(cfg.Type)
 	utils.Console.DebugLn("Starting watchers...")
 
-	err = watchers_shared.WatchConfig()
+	err = project_shared.WatchConfig()
 	if err != nil {
 		return err
 	}
 
-	switch cfg.Type {
-	case shared.ScaffoldHMD:
-		err := watchers_hmd.Watch()
-		if err != nil {
-			return err
-		}
-	case shared.ScaffoldHSS:
-		err := watchers_hss.Watch()
-		if err != nil {
-			return err
-		}
-	default:
+	projectRun, exists := projectTypes[cfg.Type]
+	if !exists {
 		return fmt.Errorf("unknown project type: %s", cfg.Type)
+	}
+
+	err = projectRun()
+	if err != nil {
+		return err
 	}
 
 	// Block

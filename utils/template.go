@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"html/template"
 	"os"
 	"strings"
+	"text/template"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"

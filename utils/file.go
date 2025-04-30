@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -34,7 +33,7 @@ func (g *GeneratedFileTree) Generate(data any) error {
 
 func (g *GeneratedFileTree) AddFile(path string, template string, tools []string) {
 	g.files = append(g.files, generateFileEntry{
-		path:     path,
+		path:     filepath.Join(g.prefix, path),
 		template: template,
 		tools:    tools,
 	})
@@ -42,7 +41,7 @@ func (g *GeneratedFileTree) AddFile(path string, template string, tools []string
 
 func (g *GeneratedFileTree) AddDirectory(path string) {
 	g.files = append(g.files, generateFileEntry{
-		path: path,
+		path: filepath.Join(g.prefix, path) + "/",
 	})
 }
 
@@ -53,11 +52,9 @@ func (g *GeneratedFileTree) SetPrefix(prefix string) {
 func (g *GeneratedFileTree) generateFile(file *generateFileEntry, data any) error {
 	var err error
 
-	path := filepath.Join(g.prefix, file.path)
-
 	// Directory
 	if strings.HasSuffix(file.path, "/") {
-		err = os.MkdirAll(path, 0755)
+		err = os.MkdirAll(file.path, 0755)
 		if err != nil {
 			return err
 		}
@@ -68,7 +65,7 @@ func (g *GeneratedFileTree) generateFile(file *generateFileEntry, data any) erro
 	// File
 
 	// Create parent directory if not exists
-	dir := filepath.Dir(path)
+	dir := filepath.Dir(file.path)
 	if dir != "." {
 		err = os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -77,7 +74,7 @@ func (g *GeneratedFileTree) generateFile(file *generateFileEntry, data any) erro
 	}
 
 	// Create file
-	f, err := os.Create(path)
+	f, err := os.Create(file.path)
 	if err != nil {
 		return err
 	}
@@ -93,19 +90,12 @@ func (g *GeneratedFileTree) generateFile(file *generateFileEntry, data any) erro
 
 	// Run tools
 	f.Close()
-	for _, tool := range file.tools {
-		toolArgs := strings.Split(tool, " ")
-		toolArgs = append(toolArgs, path)
-		cmd := exec.Command(toolArgs[0], toolArgs[1:]...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		if err != nil {
-			return err
-		}
+	err = RunTools(file.path, file.tools)
+	if err != nil {
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func CalculateFileHash(path string) (string, error) {
