@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 
 	"github.com/manifoldco/promptui"
 	"github.com/nfwGytautas/appy-cli/config"
+	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/project"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
 	"github.com/nfwGytautas/appy-cli/shared"
@@ -15,6 +17,27 @@ import (
 )
 
 func main() {
+	pe := plugins.NewPluginEngine()
+
+	p, err := pe.LoadPlugin("plugin.lua")
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
+
+	log.Println(p.String())
+
+	p.SetMetaFields(plugins.PluginMetaFields{
+		Root: "test/",
+	})
+
+	p.OnLoad()
+	p.OnDomainCreated("test")
+	p.OnAdapterCreated("test", "adapter")
+	p.OnConnectorCreated("test", "connector")
+
+	defer pe.Shutdown()
+
+	return
 	// Check if verbose flag is set
 	flag.BoolVar(&utils.Verbose, "debug", false, "Debug output")
 	flag.Parse()
