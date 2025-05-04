@@ -47,7 +47,7 @@ import (
 )
 
 type Providers struct {
-    {{range .Providers}}{{.Name}} *providers_{{.Name}}.Provider
+    {{range .Providers}}{{TitleString .Name}} *providers_{{.Name}}.Provider
     {{end}}
 }
 
@@ -58,7 +58,7 @@ func Initialize() (*Providers, error) {
 	var err error
 	{{end}}
 
-	{{range .Providers}}providers.{{.Name}}, err = providers_{{.Name}}.Init()
+	{{range .Providers}}providers.{{TitleString .Name}}, err = providers_{{.Name}}.Init()
     if err != nil {
         return nil, err
     }
@@ -72,7 +72,7 @@ func Start(providers *Providers) error {
 	var err error
 	{{end}}
 
-	{{range .Providers}}providers.{{.Name}}, err = providers_{{.Name}}.Start()
+	err = providers.{{TitleString .Name}}.Start()
     if err != nil {
         return nil, err
     }

@@ -7,7 +7,8 @@ import (
 )
 
 type PluginMetaFields struct {
-	Root string
+	ScriptRoot   string
+	ProviderRoot string
 }
 
 type plugin struct {
@@ -52,7 +53,8 @@ func (p *plugin) loadHook(h *lua.LValue, name string) {
 }
 
 func (p *plugin) SetMetaFields(fields PluginMetaFields) {
-	p.engine.luaState.SetField(p.t, "root", lua.LString(fields.Root))
+	p.engine.luaState.SetField(p.t, "script_root", lua.LString(fields.ScriptRoot))
+	p.engine.luaState.SetField(p.t, "provider_root", lua.LString(fields.ProviderRoot))
 }
 
 func (p *plugin) String() string {
@@ -79,7 +81,7 @@ func (p *plugin) OnLoad() error {
 		Fn:      p.onLoad,
 		NRet:    0,
 		Protect: true,
-	})
+	}, p.t)
 
 	if err != nil {
 		return err
@@ -97,7 +99,7 @@ func (p *plugin) OnDomainCreated(name string) error {
 		Fn:      p.onDomainCreated,
 		NRet:    0,
 		Protect: true,
-	}, lua.LString(name))
+	}, p.t, lua.LString(name))
 
 	if err != nil {
 		return err
@@ -115,8 +117,7 @@ func (p *plugin) OnConnectorCreated(domain string, connector string) error {
 		Fn:      p.onConnectorCreated,
 		NRet:    0,
 		Protect: true,
-	}, lua.LString(domain), lua.LString(connector))
-
+	}, p.t, lua.LString(domain), lua.LString(connector))
 	if err != nil {
 		return err
 	}
@@ -134,7 +135,7 @@ func (p *plugin) OnAdapterCreated(domain string, adapter string) error {
 		NRet:    0,
 		Protect: true,
 		Handler: p.engine.errorHandler,
-	}, lua.LString(domain), lua.LString(adapter))
+	}, p.t, lua.LString(domain), lua.LString(adapter))
 
 	if err != nil {
 		return err

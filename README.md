@@ -7,7 +7,6 @@ A CLI tool for working with appy
 - [x] Auto generate folder structure
 - [x] Auto apply a template for domain model
 - [ ] Auto check build
-- [ ] Query tool for postgres
 
 ## Changelog
 

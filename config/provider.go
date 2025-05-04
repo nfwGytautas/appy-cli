@@ -6,40 +6,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
 type Provider struct {
-	Name           string    `yaml:"name"`
-	Path           string    `yaml:"path"`
-	Version        string    `yaml:"version"`
-	Description    string    `yaml:"description"`
-	ProviderAtRoot bool      `yaml:"atRootLevel"`
-	Enabled        bool      `yaml:"enabled"`
-	Hooks          []Hook    `yaml:"hooks"`
-	Watchers       []Watcher `yaml:"watchers"`
+	Name        string `yaml:"name"`
+	Path        string `yaml:"path"`
+	Version     string `yaml:"version"`
+	Description string `yaml:"description"`
+	Enabled     bool   `yaml:"enabled"`
 
 	repo *Repository `yaml:"-"`
 }
 
 func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
-	for _, hook := range p.Hooks {
-		hook.provider = p
-		err := hook.Configure(opts)
-		if err != nil {
-			return fmt.Errorf("failed to configure hook `%s`: %v", hook.Name, err)
-		}
-	}
-
-	for _, watcher := range p.Watchers {
-		watcher.provider = p
-		err := watcher.Configure(opts)
-		if err != nil {
-			return fmt.Errorf("failed to configure watcher: %v", err)
-		}
-	}
-
 	if !p.Enabled {
 		return nil
 	}
@@ -98,11 +78,6 @@ func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 		return fmt.Errorf("failed to copy provider files: %v", err)
 	}
 
-	err = p.RunLocalHook(shared.HookOnProviderConfigured, opts)
-	if err != nil {
-		return fmt.Errorf("failed to run provider configured hook: %v", err)
-	}
-
 	return nil
 }
 
@@ -115,61 +90,6 @@ func (p *Provider) DeleteConfiguration() error {
 	err := os.RemoveAll(fmt.Sprintf("providers/%s", p.Name))
 	if err != nil {
 		return fmt.Errorf("failed to delete provider configuration: %v", err)
-	}
-
-	return nil
-}
-
-func (p *Provider) RunLocalHook(hookName string, data any) error {
-	for _, hook := range p.Hooks {
-		hook.provider = p
-		if hook.Name == hookName {
-			return hook.Run(data)
-		}
-	}
-
-	return nil
-}
-
-func (p *Provider) RestartWatchers() error {
-	for _, watcher := range p.Watchers {
-		watcher.provider = p
-		err := watcher.Restart()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (p *Provider) StopWatchers() error {
-	if !p.Enabled {
-		return nil
-	}
-
-	for _, watcher := range p.Watchers {
-		watcher.provider = p
-		err := watcher.Stop()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (p *Provider) StartWatchers() error {
-	if !p.Enabled {
-		return nil
-	}
-
-	for _, watcher := range p.Watchers {
-		watcher.provider = p
-		err := watcher.Start()
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

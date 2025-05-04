@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
@@ -16,6 +17,10 @@ var appyModuleExports = map[string]lua.LGFunction{
 	"get_adapter_root":   getAdapterRoot,
 	"get_connector_root": getConnectorRoot,
 	"apply_template":     applyTemplate,
+	"mkdir":              mkdir,
+	"copy_file":          copyFile,
+	"execute_shell":      executeShell,
+	"watch_directory":    watchDirectory,
 }
 
 func appyModuleLoader(l *lua.LState) int {
@@ -24,6 +29,11 @@ func appyModuleLoader(l *lua.LState) int {
 
 	// Register the functions in the appy module
 	l.SetField(mod, "version", lua.LString(shared.Version))
+
+	l.SetField(mod, "FS_OP_CREATE", lua.LNumber(fsnotify.Create))
+	l.SetField(mod, "FS_OP_WRITE", lua.LNumber(fsnotify.Write))
+	l.SetField(mod, "FS_OP_REMOVE", lua.LNumber(fsnotify.Remove))
+	l.SetField(mod, "FS_OP_RENAME", lua.LNumber(fsnotify.Rename))
 
 	// Set the appy module in the global table
 	l.Push(mod)
@@ -35,21 +45,19 @@ func getDomainRoot(l *lua.LState) int {
 	l.Pop(1)
 
 	if domainRoot == lua.LNil {
-		utils.Console.ErrorLn("'get_domain_root: incorrect number of arguments'")
-		l.Push(lua.LNil)
+		l.RaiseError("incorrect number of arguments'")
 		return 1
 	}
 
 	domainName, ok := domainRoot.(lua.LString)
 	if !ok {
-		utils.Console.Error("'get_domain_root: expected 1st arg to be string got: %v'\n", domainRoot.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 1st arg to be string got: %v'", domainRoot.Type())
 		return 1
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		l.Push(lua.LNil)
+		l.RaiseError("failed to get working dir: %v'", err)
 		return 1
 	}
 
@@ -63,34 +71,30 @@ func getAdapterRoot(l *lua.LState) int {
 	l.Pop(2)
 
 	if domainRoot == lua.LNil {
-		utils.Console.ErrorLn("'get_adapter_root: incorrect number of arguments'")
-		l.Push(lua.LNil)
+		l.RaiseError("incorrect number of arguments'")
 		return 1
 	}
 
 	if adapter == lua.LNil {
-		utils.Console.ErrorLn("'get_adapter_root: incorrect number of arguments'")
-		l.Push(lua.LNil)
+		l.RaiseError("incorrect number of arguments'")
 		return 1
 	}
 
 	domainName, ok := domainRoot.(lua.LString)
 	if !ok {
-		utils.Console.Error("'get_adapter_root: expected 1st arg to be string got: %v'\n", domainRoot.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 1st arg to be string got: %v'", domainRoot.Type())
 		return 1
 	}
 
 	adapterName, ok := adapter.(lua.LString)
 	if !ok {
-		utils.Console.Error("'get_adapter_root: expected 2nd arg to be string got: %v'\n", adapter.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 2nd arg to be string got: %v'", adapter.Type())
 		return 1
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		l.Push(lua.LNil)
+		l.RaiseError("failed to get working dir: %v'", err)
 		return 1
 	}
 
@@ -105,34 +109,30 @@ func getConnectorRoot(l *lua.LState) int {
 	l.Pop(2)
 
 	if domainRoot == lua.LNil {
-		utils.Console.ErrorLn("'get_connector_root: incorrect number of arguments'")
-		l.Push(lua.LNil)
+		l.RaiseError("incorrect number of arguments'")
 		return 1
 	}
 
 	if connector == lua.LNil {
-		utils.Console.ErrorLn("'get_connector_root: incorrect number of arguments'")
-		l.Push(lua.LNil)
+		l.RaiseError("incorrect number of arguments'")
 		return 1
 	}
 
 	domainName, ok := domainRoot.(lua.LString)
 	if !ok {
-		utils.Console.Error("'get_connector_root: expected 1st arg to be string got: %v'\n", domainRoot.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 1st arg to be string got: %v'", domainRoot.Type())
 		return 1
 	}
 
 	connectorName, ok := connector.(lua.LString)
 	if !ok {
-		utils.Console.Error("'get_connector_root: expected 2nd arg to be string got: %v'\n", connector.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 2nd arg to be string got: %v'", connector.Type())
 		return 1
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		l.Push(lua.LNil)
+		l.RaiseError("failed to get working dir: %v'", err)
 		return 1
 	}
 
@@ -141,20 +141,19 @@ func getConnectorRoot(l *lua.LState) int {
 }
 
 func applyTemplate(l *lua.LState) int {
-	utils.Console.DebugLn("apply_template called")
 	argTable := l.Get(-1)
 	l.Pop(1)
 
 	if argTable == lua.LNil {
 		utils.Console.ErrorLn("'apply_template': incorrect number of arguments'")
 		l.Push(lua.LNil)
+		l.RaiseError("incorrect number of arguments'")
 		return 1
 	}
 
 	table, ok := argTable.(*lua.LTable)
 	if !ok {
-		utils.Console.Error("'apply_template': expected 1st arg to be table got: %v'\n", argTable.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 1st arg to be table got: %v'", argTable.Type())
 		return 1
 	}
 
@@ -165,57 +164,56 @@ func applyTemplate(l *lua.LState) int {
 	args := l.GetField(table, "args")
 
 	if template == lua.LNil || target == lua.LNil {
-		utils.Console.ErrorLn("'apply_template': arguments, 'template' and 'target' keys are required'")
-		l.Push(lua.LNil)
+		l.RaiseError("arguments, 'template' and 'target' keys are required'")
 		return 1
 	}
 
 	templateName, ok := template.(lua.LString)
 	if !ok {
-		utils.Console.Error("'apply_template': expected 'template' to be string got: %v'\n", template.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 'template' to be string got: %v'\n", template.Type())
 		return 1
 	}
 
 	targetName, ok := target.(lua.LString)
 	if !ok {
-		utils.Console.Error("'apply_template': expected 'target' to be string got: %v'\n", target.Type())
-		l.Push(lua.LNil)
+		l.RaiseError("expected 'target' to be string got: %v'\n", target.Type())
 		return 1
 	}
 
 	if args != lua.LNil {
 		argsTable, ok := args.(*lua.LTable)
 		if !ok {
-			utils.Console.Error("'apply_template': expected 'args' to be table got: %v'\n", args.Type())
-			l.Push(lua.LNil)
+			l.RaiseError("expected 'args' to be table got: %v'\n", args.Type())
 			return 1
 		}
 
 		argsTable.ForEach(func(k lua.LValue, v lua.LValue) {
 			key, ok := k.(lua.LString)
 			if !ok {
-				utils.Console.Error("'apply_template': expected key to be string got: %v'\n", k.Type())
-				l.Push(lua.LNil)
+				l.RaiseError("expected key to be string got: %v'\n", k.Type())
 				return
 			}
 
-			arguments[key.String()] = v
+			value, ok := v.(lua.LString)
+			if !ok {
+				l.RaiseError("expected value to be string got: %v'\n", v.Type())
+				return
+			}
+
+			arguments[key.String()] = string(value)
 		})
 	}
 
 	// Create destination directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(targetName.String()), 0755); err != nil {
-		utils.Console.Error("'apply_template': failed to create provider directory: %v'\n", err)
-		l.Push(lua.LNil)
+		l.RaiseError("failed to create provider directory: %v'\n", err)
 		return 1
 	}
 
 	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		utils.Console.Error("'apply_template': failed to load config: %v\n", err)
-		l.Push(lua.LNil)
+		l.RaiseError("failed to load config: %v\n", err)
 		return 1
 	}
 
@@ -223,10 +221,173 @@ func applyTemplate(l *lua.LState) int {
 
 	err = utils.TemplateAFile(templateName.String(), targetName.String(), arguments)
 	if err != nil {
-		utils.Console.Error("'apply_template': error applying template: %v'\n", err)
-		l.Push(lua.LNil)
+		l.RaiseError("error applying template: %v'\n", err)
 		return 1
 	}
+
+	return 0
+}
+
+func mkdir(l *lua.LState) int {
+	path := l.Get(-1)
+	l.Pop(1)
+
+	if path == lua.LNil {
+		l.RaiseError("incorrect number of arguments'")
+		return 1
+	}
+
+	pathName, ok := path.(lua.LString)
+	if !ok {
+		l.RaiseError("expected 1st arg to be string got: %v'\n", path.Type())
+		return 1
+	}
+
+	err := os.MkdirAll(pathName.String(), 0755)
+	if err != nil {
+		l.RaiseError("failed to create directory: %v'\n", err)
+		return 1
+	}
+
+	return 0
+}
+
+func copyFile(l *lua.LState) int {
+	src := l.Get(-2)
+	dst := l.Get(-1)
+	l.Pop(2)
+
+	if src == lua.LNil || dst == lua.LNil {
+		l.RaiseError("incorrect number of arguments'")
+		return 1
+	}
+
+	srcName, ok := src.(lua.LString)
+	if !ok {
+		l.RaiseError("expected 1st arg to be string got: %v'\n", src.Type())
+		return 1
+	}
+
+	dstName, ok := dst.(lua.LString)
+	if !ok {
+		l.RaiseError("expected 2nd arg to be string got: %v'\n", dst.Type())
+		return 1
+	}
+
+	err := os.MkdirAll(filepath.Dir(dstName.String()), 0755)
+	if err != nil {
+		l.RaiseError("failed to create directory: %v'\n", err)
+		return 1
+	}
+
+	// Copy the file
+	err = utils.CopyFile(srcName.String(), dstName.String())
+	if err != nil {
+		l.RaiseError("failed to copy file: %v'\n", err)
+		return 1
+	}
+
+	return 0
+}
+
+func executeShell(l *lua.LState) int {
+	commandToRun := ""
+
+	shell := l.Get(-2)
+	args := l.Get(-1)
+	l.Pop(1)
+
+	if shell == lua.LNil {
+		l.RaiseError("incorrect number of arguments'")
+		return 1
+	}
+
+	if args != lua.LNil {
+		l.Pop(1)
+
+		argsTable, ok := args.(*lua.LTable)
+		if !ok {
+			l.RaiseError("expected 2nd arg to be table got: %v'\n", args.Type())
+			return 1
+		}
+
+		argsTable.ForEach(func(k lua.LValue, v lua.LValue) {
+			value, ok := v.(lua.LString)
+			if !ok {
+				l.RaiseError("expected value to be string got: %v", k.Type())
+				return
+			}
+
+			commandToRun += " " + string(value)
+		})
+	}
+
+	shellCommand, ok := shell.(lua.LString)
+	if !ok {
+		l.RaiseError("expected 1st arg to be string got: %v'\n", shell.Type())
+		return 1
+	}
+
+	commandToRun = string(shellCommand) + commandToRun
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		l.RaiseError("failed to get working dir: %v'\n", err)
+		return 1
+	}
+
+	err = utils.RunCommand(cwd, commandToRun)
+	if err != nil {
+		l.RaiseError("failed to execute command: %v'\n", err)
+		return 1
+	}
+
+	return 0
+}
+
+func watchDirectory(l *lua.LState) int {
+	path := l.Get(-2)
+	callback := l.Get(-1)
+	l.Pop(2)
+
+	if path == lua.LNil || callback == lua.LNil {
+		l.RaiseError("incorrect number of arguments'")
+		return 1
+	}
+
+	pathName, ok := path.(lua.LString)
+	if !ok {
+		l.RaiseError("expected 1st arg to be string got: %v'\n", path.Type())
+		return 1
+	}
+
+	callbackFunc, ok := callback.(*lua.LFunction)
+	if !ok {
+		l.RaiseError("expected 2nd arg to be function got: %v'\n", callback.Type())
+		return 1
+	}
+
+	watcher, err := utils.NewWatcher(string(pathName), func(event fsnotify.Event) {
+		if event.Op&fsnotify.Chmod == fsnotify.Chmod {
+			return
+		}
+
+		err := l.CallByParam(lua.P{
+			Fn:      callbackFunc,
+			NRet:    0,
+			Protect: true,
+		}, lua.LString(event.Name), lua.LNumber(event.Op))
+		if err != nil {
+			utils.Console.ErrorLn("failed to call callback function: %v", err)
+			return
+		}
+	})
+	if err != nil {
+		l.RaiseError("failed to watch directory: %v'\n", err)
+		return 1
+	}
+
+	watcher.Start()
 
 	return 0
 }

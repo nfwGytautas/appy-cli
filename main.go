@@ -8,7 +8,6 @@ import (
 	"regexp"
 
 	"github.com/manifoldco/promptui"
-	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/project"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
@@ -17,6 +16,10 @@ import (
 )
 
 func main() {
+	// Check if verbose flag is set
+	flag.BoolVar(&utils.Verbose, "debug", false, "Debug output")
+	flag.Parse()
+
 	pe := plugins.NewPluginEngine()
 
 	p, err := pe.LoadPlugin("plugin.lua")
@@ -26,21 +29,42 @@ func main() {
 
 	log.Println(p.String())
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
+
 	p.SetMetaFields(plugins.PluginMetaFields{
-		Root: "test/",
+		ScriptRoot:   cwd + "/",
+		ProviderRoot: cwd + "/",
 	})
 
-	p.OnLoad()
-	p.OnDomainCreated("test")
-	p.OnAdapterCreated("test", "adapter")
-	p.OnConnectorCreated("test", "connector")
+	err = p.OnLoad()
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
+
+	err = p.OnDomainCreated("test")
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
+
+	err = p.OnAdapterCreated("test", "adapter")
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
+
+	err = p.OnConnectorCreated("test", "connector")
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
 
 	defer pe.Shutdown()
 
+	// Block
+	<-make(chan struct{})
+
 	return
-	// Check if verbose flag is set
-	flag.BoolVar(&utils.Verbose, "debug", false, "Debug output")
-	flag.Parse()
 
 	utils.Console.ClearEntireConsole()
 
@@ -66,17 +90,7 @@ func main() {
 
 	utils.Console.ClearEntireConsole()
 
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
 	// TODO: Terminal ui
-
-	err = cfg.StartProviders()
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
 
 	project.Watch()
 	if err != nil {

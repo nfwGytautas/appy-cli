@@ -72,10 +72,6 @@ func (c *AppyConfig) Reconfigure() error {
 
 	for _, repository := range c.Repositories {
 		repository.config = c
-		err := repository.StopWatchers()
-		if err != nil {
-			return err
-		}
 
 		// Providers
 		err = repository.Configure(RepositoryConfigureOpts{
@@ -131,24 +127,6 @@ func (c *AppyConfig) Reconfigure() error {
 		return err
 	}
 
-	err = c.StartProviders()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *AppyConfig) RunHook(hookName string, data any) error {
-	utils.Console.InfoLn("Running hook %s", hookName)
-
-	for _, repository := range c.Repositories {
-		err := repository.RunHook(hookName, data)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -158,15 +136,4 @@ func (c *AppyConfig) ApplyStringSubstitution(str string) string {
 	str = strings.ReplaceAll(str, "${Module}", c.Module)
 	str = strings.ReplaceAll(str, "${BuildDir}", c.BuildDir)
 	return str
-}
-
-func (c *AppyConfig) StartProviders() error {
-	for _, repository := range c.Repositories {
-		err := repository.StartWatchers()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

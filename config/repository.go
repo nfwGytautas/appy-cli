@@ -97,7 +97,6 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 		}
 
 		// Add providers from root config
-		providerConfig.ProviderAtRoot = true
 		providerConfig.Enabled = false
 		providerConfig.Path = repositoryPath
 
@@ -139,7 +138,6 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 				}
 
 				// Add providers from root config
-				providerConfig.ProviderAtRoot = false
 				providerConfig.Enabled = false
 				providerConfig.Path = subdirPath
 
@@ -154,51 +152,6 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 		provider.repo = r
 		utils.Console.InfoLn("   + `%s@%s`", provider.Name, provider.Version)
 		err := provider.Configure(opts)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *Repository) RunHook(hookName string, data any) error {
-	for _, provider := range r.Providers {
-		err := provider.RunLocalHook(hookName, data)
-		if err != nil {
-			utils.Console.ErrorLn("failed to run hook `%s` for provider `%s`: %v\n", hookName, provider.Name, err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *Repository) RestartWatchers() error {
-	for _, provider := range r.Providers {
-		err := provider.RestartWatchers()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *Repository) StopWatchers() error {
-	for _, provider := range r.Providers {
-		err := provider.StopWatchers()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *Repository) StartWatchers() error {
-	for _, provider := range r.Providers {
-		err := provider.StartWatchers()
 		if err != nil {
 			return err
 		}

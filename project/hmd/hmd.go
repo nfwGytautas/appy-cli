@@ -119,13 +119,5 @@ func scaffoldDomain(cfg *config.AppyConfig, name string) error {
 		return err
 	}
 
-	err = cfg.RunHook(shared.HookOnDomainCreated, map[string]any{
-		"DomainName": name,
-		"Module":     cfg.Module,
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
