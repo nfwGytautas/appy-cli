@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 
+	plugins_modules "github.com/nfwGytautas/appy-cli/plugins/modules"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -17,7 +18,7 @@ func NewPluginEngine() *PluginEngine {
 		luaState: lua.NewState(),
 	}
 
-	pe.luaState.PreloadModule("appy", appyModuleLoader)
+	pe.luaState.PreloadModule("appy", plugins_modules.AppyModuleLoader)
 	pe.errorHandler = pe.luaState.NewFunction(func(l *lua.LState) int {
 		err := l.ToString(1)
 		if err != "" {
@@ -30,6 +31,7 @@ func NewPluginEngine() *PluginEngine {
 }
 
 func (pe *PluginEngine) Shutdown() {
+	plugins_modules.StopModuleWatchers()
 	pe.luaState.Close()
 }
 

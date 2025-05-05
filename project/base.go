@@ -15,15 +15,12 @@ var projectTypes = map[string]func() error{
 }
 
 func Watch() error {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return err
-	}
+	cfg := config.GetConfig()
 
 	utils.Console.DebugLn(cfg.Type)
 	utils.Console.DebugLn("Starting watchers...")
 
-	err = project_shared.WatchConfig()
+	err := project_shared.WatchConfig()
 	if err != nil {
 		return err
 	}

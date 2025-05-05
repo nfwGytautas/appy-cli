@@ -22,20 +22,46 @@ type AppyConfig struct {
 	BuildDir  string `yaml:"-"`
 }
 
-func LoadConfig() (*AppyConfig, error) {
-	cfg := &AppyConfig{}
+var gConfig *AppyConfig
 
+func GetConfig() *AppyConfig {
+	if gConfig != nil {
+		return gConfig
+	}
+
+	gConfig = &AppyConfig{}
+
+	// Check if 'appy.yaml' file exists
+	_, err := os.Stat("appy.yaml")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		utils.Console.Fatal(err)
+	}
+
+	// Load it
+	err = gConfig.Reload()
+	if err != nil {
+		utils.Console.Fatal(err)
+	}
+
+	return gConfig
+}
+
+func (c *AppyConfig) Reload() error {
 	yamlFile, err := os.ReadFile("appy.yaml")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = yaml.Unmarshal(yamlFile, cfg)
+	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return cfg, nil
+	return nil
 }
 
 func (c *AppyConfig) Save() error {

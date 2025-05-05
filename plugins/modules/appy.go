@@ -1,4 +1,4 @@
-package plugins
+package plugins_modules
 
 import (
 	"fmt"
@@ -21,9 +21,12 @@ var appyModuleExports = map[string]lua.LGFunction{
 	"copy_file":          copyFile,
 	"execute_shell":      executeShell,
 	"watch_directory":    watchDirectory,
+	"get_project_name":   getProjectName,
 }
 
-func appyModuleLoader(l *lua.LState) int {
+var watchers = []*utils.Watcher{}
+
+func AppyModuleLoader(l *lua.LState) int {
 	// Create a new table for the appy module
 	mod := l.SetFuncs(l.NewTable(), appyModuleExports)
 
@@ -38,6 +41,14 @@ func appyModuleLoader(l *lua.LState) int {
 	// Set the appy module in the global table
 	l.Push(mod)
 	return 1
+}
+
+func StopModuleWatchers() {
+	for _, watcher := range watchers {
+		watcher.Stop()
+	}
+
+	watchers = []*utils.Watcher{}
 }
 
 func getDomainRoot(l *lua.LState) int {
@@ -211,15 +222,9 @@ func applyTemplate(l *lua.LState) int {
 	}
 
 	// Load config
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		l.RaiseError("failed to load config: %v\n", err)
-		return 1
-	}
+	arguments["Config"] = config.GetConfig()
 
-	arguments["Config"] = cfg
-
-	err = utils.TemplateAFile(templateName.String(), targetName.String(), arguments)
+	err := utils.TemplateAFile(templateName.String(), targetName.String(), arguments)
 	if err != nil {
 		l.RaiseError("error applying template: %v'\n", err)
 		return 1
@@ -389,5 +394,12 @@ func watchDirectory(l *lua.LState) int {
 
 	watcher.Start()
 
+	watchers = append(watchers, watcher)
+
 	return 0
+}
+
+func getProjectName(l *lua.LState) int {
+	l.Push(lua.LString(config.GetConfig().Project))
+	return 1
 }

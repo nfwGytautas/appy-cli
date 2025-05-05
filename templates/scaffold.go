@@ -72,7 +72,7 @@ func Start(providers *Providers) error {
 	var err error
 	{{end}}
 
-	err = providers.{{TitleString .Name}}.Start()
+	{{range .Providers}}err = providers.{{TitleString .Name}}.Start()
     if err != nil {
         return nil, err
     }
@@ -150,6 +150,7 @@ dist/
 
 # General
 .env
+.DS_Store
 `
 
 const VscodeSnippets = //

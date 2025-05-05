@@ -68,14 +68,8 @@ func onDomainEvent(event fsnotify.Event) {
 	}
 
 	if event.Op&fsnotify.Create == fsnotify.Create {
-		cfg, err := config.LoadConfig()
-		if err != nil {
-			utils.Console.ErrorLn("Failed to load config: %s (%v)", domain, err)
-			return
-		}
-
 		// Create domain template
-		err = scaffoldDomain(cfg, domain)
+		err = scaffoldDomain(domain)
 		if err != nil {
 			utils.Console.ErrorLn("Failed to scaffold domain: %s (%v)", domain, err)
 			return
@@ -99,7 +93,7 @@ func onDomainEvent(event fsnotify.Event) {
 	}
 }
 
-func scaffoldDomain(cfg *config.AppyConfig, name string) error {
+func scaffoldDomain(name string) error {
 	tree := utils.GeneratedFileTree{}
 
 	tree.SetPrefix("domains/" + name)
@@ -111,7 +105,7 @@ func scaffoldDomain(cfg *config.AppyConfig, name string) error {
 	tree.AddFile("model/example.go", templates.DomainExampleModel, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{
-		"Config":      cfg,
+		"Config":      config.GetConfig(),
 		"DomainName":  name,
 		"UsecaseName": "ping",
 	})

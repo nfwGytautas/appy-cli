@@ -54,8 +54,9 @@ func onConfigChange() {
 		}
 
 		utils.Console.DebugLn("Config changed")
+		cfg := config.GetConfig()
 
-		cfg, err := config.LoadConfig()
+		err = cfg.Reload()
 		if err != nil {
 			utils.Console.Fatal(err)
 		}

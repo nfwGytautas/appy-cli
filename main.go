@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 
 	"github.com/manifoldco/promptui"
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/project"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
@@ -20,51 +20,48 @@ func main() {
 	flag.BoolVar(&utils.Verbose, "debug", false, "Debug output")
 	flag.Parse()
 
+	// Initialize config
+	_ = config.GetConfig()
+
 	pe := plugins.NewPluginEngine()
-
-	p, err := pe.LoadPlugin("plugin.lua")
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
-	log.Println(p.String())
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
-	p.SetMetaFields(plugins.PluginMetaFields{
-		ScriptRoot:   cwd + "/",
-		ProviderRoot: cwd + "/",
-	})
-
-	err = p.OnLoad()
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
-	err = p.OnDomainCreated("test")
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
-	err = p.OnAdapterCreated("test", "adapter")
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
-	err = p.OnConnectorCreated("test", "connector")
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
 	defer pe.Shutdown()
 
-	// Block
-	<-make(chan struct{})
+	// p, err := pe.LoadPlugin("plugin.lua")
+	// if err != nil {
+	// 	utils.Console.Fatal(err)
+	// }
 
-	return
+	// log.Println(p.String())
+
+	// cwd, err := os.Getwd()
+	// if err != nil {
+	// 	utils.Console.Fatal(err)
+	// }
+
+	// p.SetMetaFields(plugins.PluginMetaFields{
+	// 	ScriptRoot:   cwd + "/",
+	// 	ProviderRoot: cwd + "/",
+	// })
+
+	// err = p.OnLoad()
+	// if err != nil {
+	// 	utils.Console.Fatal(err)
+	// }
+
+	// err = p.OnDomainCreated("test")
+	// if err != nil {
+	// 	utils.Console.Fatal(err)
+	// }
+
+	// err = p.OnAdapterCreated("test", "adapter")
+	// if err != nil {
+	// 	utils.Console.Fatal(err)
+	// }
+
+	// err = p.OnConnectorCreated("test", "connector")
+	// if err != nil {
+	// 	utils.Console.Fatal(err)
+	// }
 
 	utils.Console.ClearEntireConsole()
 
@@ -92,7 +89,7 @@ func main() {
 
 	// TODO: Terminal ui
 
-	project.Watch()
+	err = project.Watch()
 	if err != nil {
 		utils.Console.Fatal(err)
 	}
