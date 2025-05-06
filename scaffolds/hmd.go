@@ -39,7 +39,6 @@ func scaffoldHMD(cfg *config.AppyConfig) error {
 
 	tree.AddDirectory("domains/example/")
 	tree.AddDirectory("domains/example/adapters/")
-	tree.AddDirectory("domains/example/connectors/")
 	tree.AddDirectory("domains/example/model/")
 	tree.AddFile("domains/example/domain.go", templates.DomainExampleDomain, []string{shared.ToolGoFmt})
 	tree.AddFile("domains/example/ping.go", templates.DomainExampleUsecase, []string{shared.ToolGoFmt})

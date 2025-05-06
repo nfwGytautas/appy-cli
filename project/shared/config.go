@@ -1,6 +1,7 @@
 package project_shared
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -13,22 +14,41 @@ import (
 var lastConfigHash string
 var configLock sync.Mutex
 
-func WatchConfig() error {
-	var err error
-
-	lastConfigHash, err = utils.CalculateFileHash("appy.yaml")
+func WatchConfig(ctx context.Context, wg *sync.WaitGroup) error {
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
 
-	watcher, err := utils.NewWatcher("appy.yaml", func(event fsnotify.Event) {
-		onConfigChange()
-	})
+	err = watcher.Add("appy.yaml")
 	if err != nil {
 		return err
 	}
 
-	watcher.Start()
+	wg.Add(1)
+	go func() {
+		defer watcher.Close()
+		defer wg.Done()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					onConfigChange()
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				utils.Console.ErrorLn("Error: %v", err)
+			}
+		}
+	}()
 
 	return nil
 }
@@ -56,17 +76,7 @@ func onConfigChange() {
 		utils.Console.DebugLn("Config changed")
 		cfg := config.GetConfig()
 
-		err = cfg.Reload()
-		if err != nil {
-			utils.Console.Fatal(err)
-		}
-
 		err = cfg.Reconfigure()
-		if err != nil {
-			utils.Console.Fatal(err)
-		}
-
-		err = cfg.Save()
 		if err != nil {
 			utils.Console.Fatal(err)
 		}

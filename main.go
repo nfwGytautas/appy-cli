@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/nfwGytautas/appy-cli/config"
-	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/project"
 	"github.com/nfwGytautas/appy-cli/scaffolds"
 	"github.com/nfwGytautas/appy-cli/shared"
@@ -22,46 +22,6 @@ func main() {
 
 	// Initialize config
 	_ = config.GetConfig()
-
-	pe := plugins.NewPluginEngine()
-	defer pe.Shutdown()
-
-	// p, err := pe.LoadPlugin("plugin.lua")
-	// if err != nil {
-	// 	utils.Console.Fatal(err)
-	// }
-
-	// log.Println(p.String())
-
-	// cwd, err := os.Getwd()
-	// if err != nil {
-	// 	utils.Console.Fatal(err)
-	// }
-
-	// p.SetMetaFields(plugins.PluginMetaFields{
-	// 	ScriptRoot:   cwd + "/",
-	// 	ProviderRoot: cwd + "/",
-	// })
-
-	// err = p.OnLoad()
-	// if err != nil {
-	// 	utils.Console.Fatal(err)
-	// }
-
-	// err = p.OnDomainCreated("test")
-	// if err != nil {
-	// 	utils.Console.Fatal(err)
-	// }
-
-	// err = p.OnAdapterCreated("test", "adapter")
-	// if err != nil {
-	// 	utils.Console.Fatal(err)
-	// }
-
-	// err = p.OnConnectorCreated("test", "connector")
-	// if err != nil {
-	// 	utils.Console.Fatal(err)
-	// }
 
 	utils.Console.ClearEntireConsole()
 
@@ -81,7 +41,7 @@ func main() {
 
 	// Check if config exists
 	if _, err := os.Stat("appy.yaml"); os.IsNotExist(err) {
-		utils.Console.InfoLn("appy.yaml not found. Either misconfigured or incorrect directory.")
+		utils.Console.ErrorLn("appy.yaml not found. Either misconfigured or incorrect directory.")
 		return
 	}
 
@@ -89,7 +49,7 @@ func main() {
 
 	// TODO: Terminal ui
 
-	err = project.Watch()
+	err = project.Watch(context.Background())
 	if err != nil {
 		utils.Console.Fatal(err)
 	}

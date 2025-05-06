@@ -74,7 +74,7 @@ func Start(providers *Providers) error {
 
 	{{range .Providers}}err = providers.{{TitleString .Name}}.Start()
     if err != nil {
-        return nil, err
+        return err
     }
     {{end}}
 

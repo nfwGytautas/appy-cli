@@ -3,22 +3,22 @@ package plugins
 import (
 	"fmt"
 
-	plugins_modules "github.com/nfwGytautas/appy-cli/plugins/modules"
 	lua "github.com/yuin/gopher-lua"
 )
 
 type PluginEngine struct {
-	luaState *lua.LState
-
-	errorHandler *lua.LFunction
+	luaState      *lua.LState
+	errorHandler  *lua.LFunction
+	loadedPlugins []*Plugin
 }
 
-func NewPluginEngine() *PluginEngine {
+func NewPluginEngine(config map[string]any) *PluginEngine {
 	pe := PluginEngine{
-		luaState: lua.NewState(),
+		luaState:      lua.NewState(),
+		loadedPlugins: []*Plugin{},
 	}
 
-	pe.luaState.PreloadModule("appy", plugins_modules.AppyModuleLoader)
+	pe.luaState.PreloadModule("appy", appyModuleLoader(config))
 	pe.errorHandler = pe.luaState.NewFunction(func(l *lua.LState) int {
 		err := l.ToString(1)
 		if err != "" {
@@ -31,11 +31,11 @@ func NewPluginEngine() *PluginEngine {
 }
 
 func (pe *PluginEngine) Shutdown() {
-	plugins_modules.StopModuleWatchers()
+	stopModuleWatchers()
 	pe.luaState.Close()
 }
 
-func (pe *PluginEngine) LoadPlugin(path string) (*plugin, error) {
+func (pe *PluginEngine) LoadPlugin(path string) (*Plugin, error) {
 	err := pe.luaState.DoFile(path)
 	if err != nil {
 		return nil, err
@@ -46,5 +46,13 @@ func (pe *PluginEngine) LoadPlugin(path string) (*plugin, error) {
 		return nil, fmt.Errorf("'%v' is not a valid plugin", path)
 	}
 
-	return newPlugin(pe, p), nil
+	pInstance := newPlugin(pe, p)
+
+	pe.loadedPlugins = append(pe.loadedPlugins, pInstance)
+
+	return pInstance, nil
+}
+
+func (pe *PluginEngine) GetLoadedPlugins() []*Plugin {
+	return pe.loadedPlugins
 }

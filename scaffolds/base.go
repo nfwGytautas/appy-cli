@@ -21,29 +21,29 @@ func Scaffold(module string, scaffoldType string) error {
 		return err
 	}
 
-	cfg := config.AppyConfig{
-		Module:  module,
-		Type:    scaffoldType,
-		Project: filepath.Base(dir),
-		Version: shared.Version,
-	}
+	cfg := config.GetConfig()
+
+	cfg.Module = module
+	cfg.Type = scaffoldType
+	cfg.Project = filepath.Base(dir)
+	cfg.Version = shared.Version
 
 	scaffold, exists := scaffoldTypes[scaffoldType]
 	if !exists {
 		return errors.New("invalid scaffold type " + scaffoldType)
 	}
 
-	err = scaffold(&cfg)
-	if err != nil {
-		return err
-	}
-
-	err = cfg.Reconfigure()
+	err = scaffold(cfg)
 	if err != nil {
 		return err
 	}
 
 	err = cfg.Save()
+	if err != nil {
+		return err
+	}
+
+	err = cfg.Reconfigure()
 	if err != nil {
 		return err
 	}

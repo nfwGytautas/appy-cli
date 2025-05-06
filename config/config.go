@@ -1,15 +1,18 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 	"gopkg.in/yaml.v3"
 )
+
+const yamlFilePath = "appy.yaml"
 
 type AppyConfig struct {
 	Version      string        `yaml:"version"`
@@ -18,8 +21,9 @@ type AppyConfig struct {
 	Module       string        `yaml:"module"`
 	Repositories []*Repository `yaml:"repositories"`
 
-	Workspace string `yaml:"-"`
-	BuildDir  string `yaml:"-"`
+	Workspace string                `yaml:"-"`
+	BuildDir  string                `yaml:"-"`
+	Plugins   *plugins.PluginEngine `yaml:"-"`
 }
 
 var gConfig *AppyConfig
@@ -35,14 +39,14 @@ func GetConfig() *AppyConfig {
 	_, err := os.Stat("appy.yaml")
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return gConfig
 		}
 
 		utils.Console.Fatal(err)
 	}
 
 	// Load it
-	err = gConfig.Reload()
+	err = gConfig.Reconfigure()
 	if err != nil {
 		utils.Console.Fatal(err)
 	}
@@ -50,22 +54,8 @@ func GetConfig() *AppyConfig {
 	return gConfig
 }
 
-func (c *AppyConfig) Reload() error {
-	yamlFile, err := os.ReadFile("appy.yaml")
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(yamlFile, c)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (c *AppyConfig) Save() error {
-	yamlFile, err := os.OpenFile("appy.yaml", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	yamlFile, err := os.OpenFile(yamlFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -79,14 +69,33 @@ func (c *AppyConfig) Save() error {
 }
 
 func (c *AppyConfig) Reconfigure() error {
+	if c.Plugins != nil {
+		c.Plugins.Shutdown()
+	}
+
+	{
+		yamlFileContents, err := os.ReadFile(yamlFilePath)
+		if err != nil {
+			return err
+		}
+
+		err = yaml.Unmarshal(yamlFileContents, c)
+		if err != nil {
+			return err
+		}
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
 	c.Workspace = cwd
-
 	c.BuildDir = filepath.Join(cwd, ".appy", "build")
+	c.Plugins = plugins.NewPluginEngine(map[string]any{
+		"module":  c.Module,
+		"project": c.Project,
+	})
 
 	// Create build directory
 	err = os.MkdirAll(c.BuildDir, 0755)
@@ -147,6 +156,14 @@ func (c *AppyConfig) Reconfigure() error {
 		return err
 	}
 
+	// Load plugin hooks
+	for _, p := range c.Plugins.GetLoadedPlugins() {
+		err = p.OnLoad()
+		if err != nil {
+			return fmt.Errorf("failed to run 'onLoad' hook: %v", err)
+		}
+	}
+
 	// Save
 	err = c.Save()
 	if err != nil {
@@ -154,12 +171,4 @@ func (c *AppyConfig) Reconfigure() error {
 	}
 
 	return nil
-}
-
-func (c *AppyConfig) ApplyStringSubstitution(str string) string {
-	str = strings.ReplaceAll(str, "${Workspace}", c.Workspace)
-	str = strings.ReplaceAll(str, "${ProjectName}", c.Project)
-	str = strings.ReplaceAll(str, "${Module}", c.Module)
-	str = strings.ReplaceAll(str, "${BuildDir}", c.BuildDir)
-	return str
 }

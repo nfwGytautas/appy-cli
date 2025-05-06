@@ -1,33 +1,20 @@
 package project_hmd
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
-func watchDomain(root string) (*utils.Watcher, error) {
-	domain := filepath.Base(root)
-
-	domainWatcher, err := utils.NewWatcher(root, func(event fsnotify.Event) {
-		onDomainUsecaseEvent(root, domain, event)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	domainWatcher.Start()
-
-	return domainWatcher, nil
-}
-
-func onDomainUsecaseEvent(root string, domain string, event fsnotify.Event) {
+func onDomainUsecaseEvent(event fsnotify.Event) {
 	// Check if this is a file or directory
 	fileInfo, err := os.Stat(event.Name)
 	if err != nil {
@@ -41,6 +28,8 @@ func onDomainUsecaseEvent(root string, domain string, event fsnotify.Event) {
 	if filepath.Ext(event.Name) != ".go" {
 		return
 	}
+
+	domain := filepath.Base(filepath.Dir(event.Name))
 
 	usecase := filepath.Base(event.Name)
 	usecase = strings.TrimSuffix(usecase, filepath.Ext(usecase))
@@ -76,6 +65,21 @@ func onDomainUsecaseEvent(root string, domain string, event fsnotify.Event) {
 		if err != nil {
 			utils.Console.ErrorLn("Failed to close usecase file: %s (%v)", usecase, err)
 			return
+		}
+	}
+}
+
+func onAdapterAddedEvent(event fsnotify.Event) {
+	// always <domain>/adapters/<adapter>
+	domain := filepath.Base(filepath.Dir(filepath.Dir(event.Name)))
+	adapter := filepath.Base(event.Name)
+	log.Println(event)
+	if event.Op&fsnotify.Create == fsnotify.Create {
+		for _, p := range config.GetConfig().Plugins.GetLoadedPlugins() {
+			err := p.OnAdapterCreated(domain, adapter)
+			if err != nil {
+				utils.Console.Fatal(err)
+			}
 		}
 	}
 }

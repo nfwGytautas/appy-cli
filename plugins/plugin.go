@@ -3,6 +3,7 @@ package plugins
 import (
 	"fmt"
 
+	"github.com/nfwGytautas/appy-cli/utils"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -11,7 +12,7 @@ type PluginMetaFields struct {
 	ProviderRoot string
 }
 
-type plugin struct {
+type Plugin struct {
 	engine *PluginEngine
 	t      *lua.LTable
 
@@ -22,8 +23,8 @@ type plugin struct {
 	onAdapterCreated lua.LValue
 }
 
-func newPlugin(pe *PluginEngine, t *lua.LTable) *plugin {
-	p := plugin{
+func newPlugin(pe *PluginEngine, t *lua.LTable) *Plugin {
+	p := Plugin{
 		engine: pe,
 		t:      t,
 
@@ -43,7 +44,7 @@ func newPlugin(pe *PluginEngine, t *lua.LTable) *plugin {
 	return &p
 }
 
-func (p *plugin) loadHook(h *lua.LValue, name string) {
+func (p *Plugin) loadHook(h *lua.LValue, name string) {
 	hook := p.engine.luaState.GetField(p.t, name)
 	if hook == lua.LNil {
 		return
@@ -52,12 +53,12 @@ func (p *plugin) loadHook(h *lua.LValue, name string) {
 	*h = hook
 }
 
-func (p *plugin) SetMetaFields(fields PluginMetaFields) {
+func (p *Plugin) SetMetaFields(fields PluginMetaFields) {
 	p.engine.luaState.SetField(p.t, "script_root", lua.LString(fields.ScriptRoot))
 	p.engine.luaState.SetField(p.t, "provider_root", lua.LString(fields.ProviderRoot))
 }
 
-func (p *plugin) String() string {
+func (p *Plugin) String() string {
 	return fmt.Sprintf(`
   Hooks:
     + onConfigure: %v
@@ -72,10 +73,12 @@ func (p *plugin) String() string {
 	)
 }
 
-func (p *plugin) OnConfigure() error {
+func (p *Plugin) OnConfigure() error {
 	if p.onConfigure == nil {
 		return nil
 	}
+
+	utils.Console.DebugLn("Plugin %p: onConfigure", p)
 
 	err := p.engine.luaState.CallByParam(lua.P{
 		Fn:      p.onConfigure,
@@ -90,10 +93,12 @@ func (p *plugin) OnConfigure() error {
 	return nil
 }
 
-func (p *plugin) OnLoad() error {
+func (p *Plugin) OnLoad() error {
 	if p.onLoad == nil {
 		return nil
 	}
+
+	utils.Console.DebugLn("Plugin %p: onLoad", p)
 
 	err := p.engine.luaState.CallByParam(lua.P{
 		Fn:      p.onLoad,
@@ -108,10 +113,12 @@ func (p *plugin) OnLoad() error {
 	return nil
 }
 
-func (p *plugin) OnDomainCreated(name string) error {
+func (p *Plugin) OnDomainCreated(name string) error {
 	if p.onDomainCreated == nil {
 		return nil
 	}
+
+	utils.Console.DebugLn("Plugin %p: onDomainCreated", p)
 
 	err := p.engine.luaState.CallByParam(lua.P{
 		Fn:      p.onDomainCreated,
@@ -126,10 +133,12 @@ func (p *plugin) OnDomainCreated(name string) error {
 	return nil
 }
 
-func (p *plugin) OnAdapterCreated(domain string, adapter string) error {
+func (p *Plugin) OnAdapterCreated(domain string, adapter string) error {
 	if p.onAdapterCreated == nil {
 		return nil
 	}
+
+	utils.Console.DebugLn("Plugin %p: onAdapterCreated", p)
 
 	err := p.engine.luaState.CallByParam(lua.P{
 		Fn:      p.onAdapterCreated,

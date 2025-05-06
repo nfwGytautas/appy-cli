@@ -84,14 +84,8 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 			return fmt.Errorf("failed to read root level config: %v", err)
 		}
 
-		// Template the contents of config
-		filledData, err := utils.TemplateAString(string(configData), opts)
-		if err != nil {
-			return fmt.Errorf("failed to template config: %v", err)
-		}
-
 		var providerConfig Provider
-		err = yaml.Unmarshal([]byte(filledData), &providerConfig)
+		err = yaml.Unmarshal([]byte(configData), &providerConfig)
 		if err != nil {
 			return fmt.Errorf("failed to parse root level config: %v", err)
 		}
@@ -125,14 +119,8 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 				}
 				utils.Console.DebugLn("Found provider at %s", configPath)
 
-				// Template the contents of config
-				filledData, err := utils.TemplateAString(string(configData), opts)
-				if err != nil {
-					return fmt.Errorf("failed to template config in %s", entry.Name())
-				}
-
 				var providerConfig Provider
-				err = yaml.Unmarshal([]byte(filledData), &providerConfig)
+				err = yaml.Unmarshal([]byte(configData), &providerConfig)
 				if err != nil {
 					return fmt.Errorf("failed to parse config in %s: %v", entry.Name(), err)
 				}
@@ -158,10 +146,6 @@ func (r *Repository) Configure(opts RepositoryConfigureOpts) error {
 	}
 
 	return nil
-}
-
-func (r *Repository) ApplyStringSubstitution(str string) string {
-	return r.config.ApplyStringSubstitution(str)
 }
 
 func (r *Repository) registerProvider(provider Provider) {

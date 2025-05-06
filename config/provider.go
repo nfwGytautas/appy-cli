@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
@@ -16,12 +16,33 @@ type Provider struct {
 	Description string `yaml:"description"`
 	Enabled     bool   `yaml:"enabled"`
 
-	repo *Repository `yaml:"-"`
+	repo   *Repository     `yaml:"-"`
+	plugin *plugins.Plugin `yaml:"-"`
 }
 
 func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 	if !p.Enabled {
 		return nil
+	}
+
+	// Load the plugin
+	var err error
+	pluginPath := filepath.Join(p.Path, "plugin.lua")
+	p.plugin, err = p.repo.config.Plugins.LoadPlugin(pluginPath)
+	if err != nil {
+		return fmt.Errorf("failed to load plugin: %v", err)
+	}
+
+	if p.plugin != nil {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get current working directory: %v", err)
+		}
+
+		p.plugin.SetMetaFields(plugins.PluginMetaFields{
+			ScriptRoot:   filepath.Join(cwd, p.Path) + "/",
+			ProviderRoot: filepath.Join(cwd, "providers", p.Name) + "/",
+		})
 	}
 
 	// Check if provider is already configured
@@ -43,7 +64,7 @@ func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 	opts["ProviderRoot"] = p.Path
 
 	// Copy all files from source to destination
-	err := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -78,6 +99,13 @@ func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 		return fmt.Errorf("failed to copy provider files: %v", err)
 	}
 
+	if p.plugin != nil {
+		err = p.plugin.OnConfigure()
+		if err != nil {
+			return fmt.Errorf("failed to configure provider: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -93,10 +121,4 @@ func (p *Provider) DeleteConfiguration() error {
 	}
 
 	return nil
-}
-
-func (p *Provider) ApplyStringSubstitution(str string) string {
-	str = strings.ReplaceAll(str, "${ProviderRoot}", "${Workspace}/"+p.Path)
-	str = p.repo.ApplyStringSubstitution(str)
-	return str
 }

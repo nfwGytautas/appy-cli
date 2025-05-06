@@ -1,4 +1,4 @@
-package plugins_modules
+package plugins
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/nfwGytautas/appy-cli/config"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
 	lua "github.com/yuin/gopher-lua"
@@ -21,29 +20,36 @@ var appyModuleExports = map[string]lua.LGFunction{
 	"copy_file":          copyFile,
 	"execute_shell":      executeShell,
 	"watch_directory":    watchDirectory,
-	"get_project_name":   getProjectName,
 }
 
 var watchers = []*utils.Watcher{}
 
-func AppyModuleLoader(l *lua.LState) int {
-	// Create a new table for the appy module
-	mod := l.SetFuncs(l.NewTable(), appyModuleExports)
+func appyModuleLoader(config map[string]any) lua.LGFunction {
+	return func(l *lua.LState) int {
+		// Create a new table for the appy module
+		mod := l.SetFuncs(l.NewTable(), appyModuleExports)
 
-	// Register the functions in the appy module
-	l.SetField(mod, "version", lua.LString(shared.Version))
+		configTable := l.NewTable()
+		for k, v := range config {
+			l.SetField(configTable, k, lua.LString(fmt.Sprintf("%v", v)))
+		}
 
-	l.SetField(mod, "FS_OP_CREATE", lua.LNumber(fsnotify.Create))
-	l.SetField(mod, "FS_OP_WRITE", lua.LNumber(fsnotify.Write))
-	l.SetField(mod, "FS_OP_REMOVE", lua.LNumber(fsnotify.Remove))
-	l.SetField(mod, "FS_OP_RENAME", lua.LNumber(fsnotify.Rename))
+		// Register the functions in the appy module
+		l.SetField(mod, "config", configTable)
+		l.SetField(mod, "version", lua.LString(shared.Version))
 
-	// Set the appy module in the global table
-	l.Push(mod)
-	return 1
+		l.SetField(mod, "FS_OP_CREATE", lua.LNumber(fsnotify.Create))
+		l.SetField(mod, "FS_OP_WRITE", lua.LNumber(fsnotify.Write))
+		l.SetField(mod, "FS_OP_REMOVE", lua.LNumber(fsnotify.Remove))
+		l.SetField(mod, "FS_OP_RENAME", lua.LNumber(fsnotify.Rename))
+
+		// Set the appy module in the global table
+		l.Push(mod)
+		return 1
+	}
 }
 
-func StopModuleWatchers() {
+func stopModuleWatchers() {
 	for _, watcher := range watchers {
 		watcher.Stop()
 	}
@@ -222,8 +228,6 @@ func applyTemplate(l *lua.LState) int {
 	}
 
 	// Load config
-	arguments["Config"] = config.GetConfig()
-
 	err := utils.TemplateAFile(templateName.String(), targetName.String(), arguments)
 	if err != nil {
 		l.RaiseError("error applying template: %v'\n", err)
@@ -397,9 +401,4 @@ func watchDirectory(l *lua.LState) int {
 	watchers = append(watchers, watcher)
 
 	return 0
-}
-
-func getProjectName(l *lua.LState) int {
-	l.Push(lua.LString(config.GetConfig().Project))
-	return 1
 }
