@@ -131,12 +131,12 @@ const Dockerfile = //
 `FROM golang:1.23 as build
 WORKDIR /app
 COPY . .
-RUN go build -o /server .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server .
 
-FROM scratch
+FROM alpine
 COPY --from=build /server /server
 EXPOSE 3000
-CMD ["/server"]
+ENTRYPOINT ["/server"]
 `
 
 const Gitignore = //

@@ -28,12 +28,13 @@ func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 	// Load the plugin
 	var err error
 	pluginPath := filepath.Join(p.Path, "plugin.lua")
-	p.plugin, err = p.repo.config.Plugins.LoadPlugin(pluginPath)
-	if err != nil {
-		return fmt.Errorf("failed to load plugin: %v", err)
-	}
 
-	if p.plugin != nil {
+	if utils.FileExists(pluginPath) {
+		p.plugin, err = p.repo.config.Plugins.LoadPlugin(pluginPath)
+		if err != nil {
+			return fmt.Errorf("failed to load plugin: %v", err)
+		}
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("failed to get current working directory: %v", err)
