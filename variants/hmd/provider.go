@@ -1,4 +1,4 @@
-package config
+package variant_hmd
 
 import (
 	"fmt"

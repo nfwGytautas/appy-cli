@@ -1,4 +1,4 @@
-package config
+package variant_hmd
 
 import (
 	"fmt"
@@ -9,15 +9,16 @@ import (
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
+	variant_base "github.com/nfwGytautas/appy-cli/variants/base"
 	"gopkg.in/yaml.v3"
 )
 
-const yamlFilePath = "appy.yaml"
+const VariantName = "HMD - Hexagonal Multi Domain"
 
-type AppyConfig struct {
-	Version      string        `yaml:"version"`
+type Config struct {
+	variant_base.Config `yaml:",inline"`
+
 	Project      string        `yaml:"project"`
-	Type         string        `yaml:"type"`
 	Module       string        `yaml:"module"`
 	Repositories []*Repository `yaml:"repositories"`
 
@@ -26,36 +27,8 @@ type AppyConfig struct {
 	Plugins   *plugins.PluginEngine `yaml:"-"`
 }
 
-var gConfig *AppyConfig
-
-func GetConfig() *AppyConfig {
-	if gConfig != nil {
-		return gConfig
-	}
-
-	gConfig = &AppyConfig{}
-
-	// Check if 'appy.yaml' file exists
-	_, err := os.Stat("appy.yaml")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return gConfig
-		}
-
-		utils.Console.Fatal(err)
-	}
-
-	// Load it
-	err = gConfig.Reconfigure()
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
-
-	return gConfig
-}
-
-func (c *AppyConfig) Save() error {
-	yamlFile, err := os.OpenFile(yamlFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func (c *Config) Save() error {
+	yamlFile, err := os.OpenFile(variant_base.YamlFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -68,21 +41,9 @@ func (c *AppyConfig) Save() error {
 	return nil
 }
 
-func (c *AppyConfig) Reconfigure() error {
+func (c *Config) Reconfigure() error {
 	if c.Plugins != nil {
 		c.Plugins.Shutdown()
-	}
-
-	{
-		yamlFileContents, err := os.ReadFile(yamlFilePath)
-		if err != nil {
-			return err
-		}
-
-		err = yaml.Unmarshal(yamlFileContents, c)
-		if err != nil {
-			return err
-		}
 	}
 
 	cwd, err := os.Getwd()
@@ -110,9 +71,9 @@ func (c *AppyConfig) Reconfigure() error {
 
 		// Providers
 		err = repository.Configure(RepositoryConfigureOpts{
-			"ProjectName": c.Project,
-			"Workspace":   cwd,
-			"BuildDir":    c.BuildDir,
+			"Config":    c,
+			"Workspace": cwd,
+			"BuildDir":  c.BuildDir,
 		})
 		if err != nil {
 			return err
@@ -166,6 +127,25 @@ func (c *AppyConfig) Reconfigure() error {
 
 	// Save
 	err = c.Save()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Config) LoadAndReconfigure() error {
+	yamlFileContents, err := os.ReadFile(variant_base.YamlFilePath)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(yamlFileContents, c)
+	if err != nil {
+		return err
+	}
+
+	err = c.Reconfigure()
 	if err != nil {
 		return err
 	}

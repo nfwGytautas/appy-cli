@@ -1,19 +1,80 @@
-package scaffolds
+package variant_hmd
 
 import (
-	"github.com/nfwGytautas/appy-cli/config"
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+
+	"github.com/manifoldco/promptui"
 	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
-func scaffoldHMD(cfg *config.AppyConfig) error {
-	tree := utils.GeneratedFileTree{}
+func (cfg *Config) Scaffold() error {
+	utils.Console.DebugLn("Scaffolding HMD...")
 
-	// tree.AddDirectory("tests/")
-	// tree.AddDirectory("tests/mocks/")
-	// tree.AddDirectory("tests/unit/")
-	// tree.AddDirectory("tests/integration/")
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	moduleName, err := promptModuleName()
+	if err != nil {
+		return err
+	}
+
+	cfg.Type = VariantName
+	cfg.Module = moduleName
+	cfg.Project = filepath.Base(dir)
+	cfg.Version = shared.Version
+
+	err = generateFolderStructure(cfg)
+	if err != nil {
+		return err
+	}
+
+	err = cfg.Reconfigure()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func promptModuleName() (string, error) {
+	promptModule := promptui.Prompt{
+		Label: "Enter module name",
+		Validate: func(input string) error {
+			if input == "" {
+				return fmt.Errorf("module name is required")
+			}
+
+			matched, err := regexp.MatchString(`^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)?\/[a-zA-Z0-9]+\/[a-zA-Z0-9\-]+$`, input)
+			if err != nil {
+				return err
+			}
+			if !matched {
+				return fmt.Errorf("module name must follow the pattern: domain.extension/module/repository")
+			}
+
+			return nil
+		},
+	}
+
+	module, err := promptModule.Run()
+	if err != nil {
+		return "", err
+	}
+
+	return module, nil
+}
+
+func generateFolderStructure(cfg *Config) error {
+	utils.Console.InfoLn("Generating folder structure...")
+
+	tree := utils.GeneratedFileTree{}
 
 	tree.AddDirectory(".appy/")
 	tree.AddFile("go.mod", templates.GoMod, nil)
@@ -54,10 +115,10 @@ func scaffoldHMD(cfg *config.AppyConfig) error {
 	}
 
 	// Add default providers
-	cfg.Repositories = append(cfg.Repositories, &config.Repository{
+	cfg.Repositories = append(cfg.Repositories, &Repository{
 		Url:       "https://github.com/nfwGytautas/appy-providers",
 		Branch:    "main",
-		Providers: []config.Provider{},
+		Providers: []Provider{},
 	})
 
 	return nil

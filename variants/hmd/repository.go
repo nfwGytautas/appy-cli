@@ -1,4 +1,4 @@
-package config
+package variant_hmd
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ type Repository struct {
 	Url    string `yaml:"url"`
 	Branch string `yaml:"branch"`
 
-	Providers []Provider  `yaml:"providers"`
-	config    *AppyConfig `yaml:"-"`
+	Providers []Provider `yaml:"providers"`
+	config    *Config    `yaml:"-"`
 }
 
 func (r *Repository) GetEnabledProviders() []Provider {

@@ -30,7 +30,7 @@ type {{TitleString .UsecaseName}}Args struct {
 	// Add usecase arguments here
 }
 
-func (d *{{TitleString .DomainName}}Domain) {{.UsecaseName}}(args {{TitleString .UsecaseName}}Args) error {
+func (d *{{TitleString .DomainName}}Domain) {{TitleString .UsecaseName}}(args {{TitleString .UsecaseName}}Args) error {
 	// Add usecase logic here
 	return nil
 }

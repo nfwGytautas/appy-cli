@@ -3,16 +3,11 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
-	"regexp"
 
 	"github.com/manifoldco/promptui"
-	"github.com/nfwGytautas/appy-cli/config"
-	"github.com/nfwGytautas/appy-cli/project"
-	"github.com/nfwGytautas/appy-cli/scaffolds"
-	"github.com/nfwGytautas/appy-cli/shared"
 	"github.com/nfwGytautas/appy-cli/utils"
+	"github.com/nfwGytautas/appy-cli/variants"
 )
 
 func main() {
@@ -20,23 +15,37 @@ func main() {
 	flag.BoolVar(&utils.Verbose, "debug", false, "Debug output")
 	flag.Parse()
 
-	// Initialize config
-	_ = config.GetConfig()
-
 	utils.Console.ClearEntireConsole()
 
-	// Check if empty directory
-	entries, err := os.ReadDir(".")
+	// Get variant
+	variant, err := variants.Load()
 	if err != nil {
 		utils.Console.Fatal(err)
 	}
 
-	if len(entries) == 0 || (len(entries) == 1 && entries[0].Name() == ".git") {
-		utils.Console.InfoLn("Empty project. Scaffolding...")
-		err = scaffold()
+	if variant == nil {
+		// No variant scaffold one
+		variantType, err := promptVariantScaffold()
 		if err != nil {
 			utils.Console.Fatal(err)
 		}
+
+		variant, err = variants.CreateEmptyVariant(variantType)
+		if err != nil {
+			utils.Console.Fatal(err)
+		}
+
+		err = variant.Scaffold()
+		if err != nil {
+			utils.Console.Fatal(err)
+		}
+
+		err = pauseUntilInput()
+		if err != nil {
+			utils.Console.Fatal(err)
+		}
+
+		return
 	}
 
 	// Check if config exists
@@ -48,73 +57,34 @@ func main() {
 	utils.Console.ClearEntireConsole()
 
 	// TODO: Terminal ui
-
-	err = project.Watch(context.Background())
-	if err != nil {
-		utils.Console.Fatal(err)
-	}
+	variant.Start(context.Background())
 }
 
-func scaffold() error {
-	{
-		prompt := promptui.Select{
-			Label: "Select an option",
-			Items: []string{
-				shared.ScaffoldHMD,
-			},
-		}
-
-		_, scaffoldType, err := prompt.Run()
-		if err != nil {
-			return err
-		}
-
-		utils.Console.ClearLines(2)
-
-		promptModule := promptui.Prompt{
-			Label: "Enter module name",
-			Validate: func(input string) error {
-				if input == "" {
-					return fmt.Errorf("module name is required")
-				}
-
-				matched, err := regexp.MatchString(`^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)?\/[a-zA-Z0-9]+\/[a-zA-Z0-9\-]+$`, input)
-				if err != nil {
-					return err
-				}
-				if !matched {
-					return fmt.Errorf("module name must follow the pattern: domain.extension/module/repository")
-				}
-
-				return nil
-			},
-		}
-
-		module, err := promptModule.Run()
-		if err != nil {
-			return err
-		}
-
-		err = scaffolds.Scaffold(module, scaffoldType)
-		if err != nil {
-			utils.Console.Fatal(err)
-		}
-
-		utils.Console.InfoLn("Done!")
+func promptVariantScaffold() (string, error) {
+	prompt := promptui.Select{
+		Label: "Select an option",
+		Items: variants.GetVariantTypes(),
 	}
 
-	{
-		prompt := promptui.Prompt{
-			Label: "Press Enter to continue",
-			Validate: func(input string) error {
-				return nil
-			},
-		}
+	_, scaffoldType, err := prompt.Run()
+	if err != nil {
+		return "", err
+	}
 
-		_, err := prompt.Run()
-		if err != nil {
-			return err
-		}
+	return scaffoldType, nil
+}
+
+func pauseUntilInput() error {
+	prompt := promptui.Prompt{
+		Label: "Press Enter to continue",
+		Validate: func(input string) error {
+			return nil
+		},
+	}
+
+	_, err := prompt.Run()
+	if err != nil {
+		return err
 	}
 
 	return nil

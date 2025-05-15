@@ -56,6 +56,35 @@ func TemplateAFile(pathIn string, pathOut string, data any) error {
 	return nil
 }
 
+func TemplateAStringToFile(pathOut string, content string, data any) error {
+	var file *os.File
+
+	// Create file if not exists
+	if _, err := os.Stat(pathOut); os.IsNotExist(err) {
+		file, err = os.Create(pathOut)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Open file
+		file, err = os.OpenFile(pathOut, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+	}
+	defer file.Close()
+
+	// Write template
+	tmpl := NewTemplate(content)
+
+	err := tmpl.Execute(file, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func titleString(s string) string {
 	return cases.Title(language.English).String(strings.ToLower(s))
 }
