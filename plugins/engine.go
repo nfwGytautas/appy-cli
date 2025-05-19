@@ -56,3 +56,7 @@ func (pe *PluginEngine) LoadPlugin(path string) (*Plugin, error) {
 func (pe *PluginEngine) GetLoadedPlugins() []*Plugin {
 	return pe.loadedPlugins
 }
+
+func (pe *PluginEngine) UnloadAll() {
+	pe.loadedPlugins = []*Plugin{}
+}

@@ -16,6 +16,7 @@ A CLI tool for working with appy
 
 - Removed HSS
 - Added LUA hooks, removed hardcoded watchers/hooks
+- Improved variant support
 
 #### Bugfixes
 
