@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/manifoldco/promptui"
 	"github.com/nfwGytautas/appy-cli/utils"
@@ -56,8 +58,18 @@ func main() {
 
 	utils.Console.ClearEntireConsole()
 
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// TODO: Terminal ui
-	variant.Start(context.Background())
+	variant.Start(ctx)
+
+	<-stop
+	utils.Console.ClearLines(1)
+	utils.Console.DebugLn("Received signal, shutting down...")
 }
 
 func promptVariantScaffold() (string, error) {

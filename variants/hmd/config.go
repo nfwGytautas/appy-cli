@@ -7,7 +7,6 @@ import (
 
 	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/shared"
-	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 	variant_base "github.com/nfwGytautas/appy-cli/variants/base"
 	"gopkg.in/yaml.v3"
@@ -91,7 +90,7 @@ func (c *Config) Reconfigure() error {
 	}
 
 	// Write template
-	tmpl := utils.NewTemplate(templates.ProvidersGo)
+	tmpl := utils.NewTemplate(templateProvidersGo)
 
 	err = tmpl.Execute(f, map[string]any{
 		"Providers": enabledProviders,

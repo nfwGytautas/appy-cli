@@ -4,14 +4,11 @@ import (
 	"context"
 	"io/fs"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/nfwGytautas/appy-cli/shared"
-	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 	variant_base "github.com/nfwGytautas/appy-cli/variants/base"
 )
@@ -25,12 +22,6 @@ var lastConfigHash string
 
 func (cfg *Config) Start(ctx context.Context) error {
 	utils.Console.DebugLn("Starting HMD...")
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	utils.Console.DebugLn("Configuring...")
 	err := cfg.Reconfigure()
@@ -95,11 +86,6 @@ func (cfg *Config) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Block until a signal is received
-	<-stop
-	utils.Console.ClearLines(1)
-	utils.Console.DebugLn("Received signal, shutting down...")
-
 	return nil
 }
 
@@ -143,7 +129,7 @@ func (cfg *Config) handleWatcherEvent(event fsnotify.Event) {
 				// New usecase added
 				utils.Console.DebugLn("New usecase added: %s", finalPart)
 
-				err := utils.TemplateAStringToFile(event.Name, templates.DomainExampleUsecase, map[string]any{
+				err := utils.TemplateAStringToFile(event.Name, templateDomainExampleUsecase, map[string]any{
 					"DomainName":  domain,
 					"UsecaseName": strings.TrimSuffix(finalPart, filepath.Ext(finalPart)),
 				})
@@ -214,9 +200,9 @@ func (cfg *Config) scaffoldDomain(name string) error {
 	tree.SetPrefix("domains/" + name)
 	tree.AddDirectory("adapters/")
 	tree.AddDirectory("model/")
-	tree.AddFile("domain.go", templates.DomainExampleDomain, []string{shared.ToolGoFmt})
-	tree.AddFile("ping.go", templates.DomainExampleUsecase, []string{shared.ToolGoFmt})
-	tree.AddFile("model/example.go", templates.DomainExampleModel, []string{shared.ToolGoFmt})
+	tree.AddFile("domain.go", templateDomainExampleDomain, []string{shared.ToolGoFmt})
+	tree.AddFile("ping.go", templateDomainExampleUsecase, []string{shared.ToolGoFmt})
+	tree.AddFile("model/example.go", templateDomainExampleModel, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{
 		"Config":      cfg,

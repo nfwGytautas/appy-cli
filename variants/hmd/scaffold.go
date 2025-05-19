@@ -8,7 +8,6 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/nfwGytautas/appy-cli/shared"
-	"github.com/nfwGytautas/appy-cli/templates"
 	"github.com/nfwGytautas/appy-cli/utils"
 )
 
@@ -77,33 +76,33 @@ func generateFolderStructure(cfg *Config) error {
 	tree := utils.GeneratedFileTree{}
 
 	tree.AddDirectory(".appy/")
-	tree.AddFile("go.mod", templates.GoMod, nil)
+	tree.AddFile("go.mod", templateGoMod, nil)
 
-	tree.AddFile("main.go", templates.MainGo, []string{shared.ToolGoFmt})
-	tree.AddFile("README.md", templates.ReadmeMd, nil)
-	tree.AddFile("Dockerfile", templates.Dockerfile, nil)
+	tree.AddFile("main.go", templateMainGo, []string{shared.ToolGoFmt})
+	tree.AddFile("README.md", templateReadmeMd, nil)
+	tree.AddFile("Dockerfile", templateDockerfile, nil)
 
-	tree.AddFile(".gitignore", templates.Gitignore, nil)
+	tree.AddFile(".gitignore", templateGitignore, nil)
 
-	tree.AddFile(".vscode/Snippets.code-snippets", templates.VscodeSnippets, nil)
-	tree.AddFile(".vscode/settings.json", templates.VscodeSettings, nil)
-	tree.AddFile(".github/build.yaml", templates.GithubBuildYaml, nil)
+	tree.AddFile(".vscode/Snippets.code-snippets", templateVscodeSnippets, nil)
+	tree.AddFile(".vscode/settings.json", templateVscodeSettings, nil)
+	tree.AddFile(".github/build.yaml", templateGithubBuildYaml, nil)
 
 	tree.AddDirectory("shared/")
-	tree.AddFile("shared/errors.go", templates.ErrorsGo, []string{shared.ToolGoFmt})
+	tree.AddFile("shared/errors.go", templateErrorsGo, []string{shared.ToolGoFmt})
 
 	tree.AddDirectory("providers/")
-	tree.AddFile("providers/providers.go", templates.ProvidersGo, []string{shared.ToolGoImports, shared.ToolGoFmt})
+	tree.AddFile("providers/providers.go", templateProvidersGo, []string{shared.ToolGoImports, shared.ToolGoFmt})
 
 	tree.AddDirectory("domains/")
-	tree.AddFile("domains/domains.go", templates.DomainsGo, []string{shared.ToolGoImports, shared.ToolGoFmt})
+	tree.AddFile("domains/domains.go", templateDomainsGo, []string{shared.ToolGoImports, shared.ToolGoFmt})
 
 	tree.AddDirectory("domains/example/")
 	tree.AddDirectory("domains/example/adapters/")
 	tree.AddDirectory("domains/example/model/")
-	tree.AddFile("domains/example/domain.go", templates.DomainExampleDomain, []string{shared.ToolGoFmt})
-	tree.AddFile("domains/example/ping.go", templates.DomainExampleUsecase, []string{shared.ToolGoFmt})
-	tree.AddFile("domains/example/model/example.go", templates.DomainExampleModel, []string{shared.ToolGoFmt})
+	tree.AddFile("domains/example/domain.go", templateDomainExampleDomain, []string{shared.ToolGoFmt})
+	tree.AddFile("domains/example/ping.go", templateDomainExampleUsecase, []string{shared.ToolGoFmt})
+	tree.AddFile("domains/example/model/example.go", templateDomainExampleModel, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{
 		"Config":      cfg,
