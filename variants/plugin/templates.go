@@ -67,15 +67,11 @@ return plugin
 `
 
 const templateConfigGo = //
-`package providers_env
+`package providers_{{.Config.Name}}
 
 //
 // This file is an auto-generated template for appy plugin, do not remove Init or Start functions
 //
-
-import (
-	"os"
-)
 
 type Provider struct {
 }

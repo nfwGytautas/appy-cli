@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"{{.Config.Module}}/connectors"
 	"{{.Config.Module}}/domains"
 	"{{.Config.Module}}/providers"
 )
@@ -20,7 +21,12 @@ func main() {
 		panic(err)
 	}
 
-	err = domains.RegisterDomains(p)
+	domains, err = domains.CreateDomains(p)
+	if err != nil {
+		panic(err)
+	}
+
+	err = connectors.Connect(p, domains)
 	if err != nil {
 		panic(err)
 	}
@@ -86,18 +92,34 @@ const templateDomainsGo = //
 `package domains
 
 import (
+	interfaces "{{.Config.Module}}/interfaces/domains"
 	"{{.Config.Module}}/domains/example"
+	"{{.Config.Module}}/providers"
 )
 
-func RegisterDomains(providers *providers.Providers) error {
-	// Adapters
-	// ...
+type Domains struct {
+	Example interfaces.ExampleDomain
+}
 
-	// Domains
+func CreateDomains(providers *providers.Providers) (*Domains, error) {
 	example := example.ExampleDomain{}
 
-	// Connectors
-	// ...
+	return &Domains{
+		Example: &example,
+	}, nil
+}
+`
+
+const templateConnectorsGo = //
+`package connectors
+
+import (
+	"{{.Config.Module}}/domains"
+	"{{.Config.Module}}/providers"
+)
+
+func Connect(providers *providers.Providers, domains *domains.Domains) error {
+	// Create your connectors here
 
 	return nil
 }
@@ -246,34 +268,51 @@ var (
 const templateDomainExampleDomain = //
 `package {{.DomainName}}
 
-// Describe the domain in this file add dependencies that will need adapters, etc.
+import interfaces "{{.Config.Module}}/interfaces/domains"
+
+// TODO: Describe the domain in this file add dependencies that will need adapters, etc.
 
 type {{TitleString .DomainName}}Domain struct {
 }
+
+func New{{TitleString .DomainName}}Domain() *interfaces.{{TitleString .DomainName}}Domain {
+	// Initialize the domain here, e.g. inject dependencies
+	return &{{TitleString .DomainName}}Domain{}
+}
+
 `
 
 const templateDomainExampleModel = //
-`package {{.DomainName}}_model
+`package models
 
-type {{TitleString .DomainName}} struct {
+type {{TitleString .ModelName}} struct {
 	ID string
 }
 
-func New{{TitleString .DomainName}}(id string) *{{TitleString .DomainName}} {
-	return &{{TitleString .DomainName}}{
+func New{{TitleString .ModelName}}(id string) *{{TitleString .ModelName}} {
+	return &{{TitleString .ModelName}}{
 		ID: id,
 	}
 }
 `
 
+const templateDomainInterface = //
+`package interfaces
+
+import "{{.Config.Module}}/interfaces/models"
+
+type {{TitleString .DomainName}}Domain interface {
+	Create() (*models.{{TitleString .ModelName}}, error)
+}
+
+`
+
 const templateDomainExampleUsecase = //
 `package {{.DomainName}}
 
-type {{TitleString .UsecaseName}}Args struct {
-	// Add usecase arguments here
-}
+import interfaces "{{.Config.Module}}/interfaces/domains"
 
-func (d *{{TitleString .DomainName}}Domain) {{TitleString .UsecaseName}}(args {{TitleString .UsecaseName}}Args) error {
+func (d *{{TitleString .DomainName}}Domain) {{TitleString .UsecaseName}}(args interfaces.{{TitleString .UsecaseName}}Args) error {
 	// Add usecase logic here
 	return nil
 }

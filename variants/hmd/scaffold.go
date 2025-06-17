@@ -34,6 +34,12 @@ func (cfg *Config) Scaffold() error {
 		return err
 	}
 
+	// Create git repo
+	err = utils.RunCommand(dir, "git init")
+	if err != nil {
+		return fmt.Errorf("failed to create git repository: %w", err)
+	}
+
 	err = cfg.Reconfigure()
 	if err != nil {
 		return err
@@ -97,16 +103,23 @@ func generateFolderStructure(cfg *Config) error {
 	tree.AddDirectory("domains/")
 	tree.AddFile("domains/domains.go", templateDomainsGo, []string{shared.ToolGoImports, shared.ToolGoFmt})
 
+	tree.AddDirectory("connectors/")
+	tree.AddFile("connectors/connectors.go", templateConnectorsGo, []string{shared.ToolGoImports, shared.ToolGoFmt})
+
+	tree.AddDirectory("interfaces/")
+	tree.AddDirectory("interfaces/domains/")
+	tree.AddDirectory("interfaces/models/")
+	tree.AddFile("interfaces/models/example.go", templateDomainExampleModel, []string{shared.ToolGoFmt})
+	tree.AddFile("interfaces/domains/example.go", templateDomainInterface, []string{shared.ToolGoFmt})
+
 	tree.AddDirectory("domains/example/")
-	tree.AddDirectory("domains/example/adapters/")
-	tree.AddDirectory("domains/example/model/")
 	tree.AddFile("domains/example/domain.go", templateDomainExampleDomain, []string{shared.ToolGoFmt})
 	tree.AddFile("domains/example/ping.go", templateDomainExampleUsecase, []string{shared.ToolGoFmt})
-	tree.AddFile("domains/example/model/example.go", templateDomainExampleModel, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{
 		"Config":      cfg,
 		"DomainName":  "example",
+		"ModelName":   "example",
 		"UsecaseName": "ping",
 	})
 	if err != nil {

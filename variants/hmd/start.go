@@ -16,6 +16,8 @@ import (
 var ignoredDirs = []string{
 	".git",
 	".appy",
+	".github",
+	".vscode",
 }
 
 var lastConfigHash string
@@ -41,7 +43,12 @@ func (cfg *Config) Start(ctx context.Context) error {
 		return err
 	}
 
-	filepath.Walk(".", func(path string, info fs.FileInfo, err error) error {
+	utils.Console.DebugLn("Watching config")
+	watcher.Add("appy.yaml")
+
+	utils.Console.DebugLn("Watching providers")
+	watcher.Add("providers/")
+	filepath.Walk("providers", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			utils.Console.Error("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			return err
@@ -51,19 +58,35 @@ func (cfg *Config) Start(ctx context.Context) error {
 			return nil
 		}
 
-		// Ignore certain directories
-		for _, ignoredDir := range ignoredDirs {
-			if info.Name() == ignoredDir {
-				utils.Console.DebugLn("Ignoring directory: %s", path)
-				return filepath.SkipDir
-			}
-		}
-
-		utils.Console.DebugLn("Watching directory: %s", path)
+		utils.Console.DebugLn("Watching provider directory: %s", path)
 		watcher.Add(path)
 
 		return nil
 	})
+
+	utils.Console.DebugLn("Watching domains")
+	watcher.Add("domains/")
+	filepath.Walk("domains/", func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			utils.Console.Error("prevent panic by handling failure accessing a path %q: %v\n", path, err)
+			return err
+		}
+
+		if !info.IsDir() {
+			return nil
+		}
+
+		utils.Console.DebugLn("Watching domain: %s", path)
+		watcher.Add(path)
+		return nil
+	})
+
+	utils.Console.DebugLn("Watching connectors")
+	watcher.Add("connectors/")
+
+	utils.Console.DebugLn("Watching interfaces")
+	watcher.Add("interfaces/domains/")
+	watcher.Add("interfaces/models/")
 
 	go func() {
 		defer watcher.Close()
@@ -76,7 +99,7 @@ func (cfg *Config) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				cfg.handleWatcherEvent(event)
+				cfg.handleWatcherEvent(watcher, event)
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
@@ -89,7 +112,7 @@ func (cfg *Config) Start(ctx context.Context) error {
 	return nil
 }
 
-func (cfg *Config) handleWatcherEvent(event fsnotify.Event) {
+func (cfg *Config) handleWatcherEvent(watcher *fsnotify.Watcher, event fsnotify.Event) {
 	if event.Op == fsnotify.Chmod {
 		// Ignore chmod events
 		return
@@ -105,24 +128,6 @@ func (cfg *Config) handleWatcherEvent(event fsnotify.Event) {
 		// If part count > 2, its a domain event
 		if len(parts) > 2 {
 			domain := parts[1]
-
-			if parts[2] == "adapters" {
-				// Adapter added or removed
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					// New adapter added
-					utils.Console.DebugLn("New adapter added: %s", finalPart)
-
-					for _, p := range cfg.Plugins.GetLoadedPlugins() {
-						err := p.OnAdapterCreated(domain, finalPart)
-						if err != nil {
-							utils.Console.ErrorLn("Error on plugin hook creating adapter: %v", err)
-							return
-						}
-					}
-				}
-
-				return
-			}
 
 			// Usecase added or removed
 			if event.Op&fsnotify.Create == fsnotify.Create {
@@ -141,6 +146,8 @@ func (cfg *Config) handleWatcherEvent(event fsnotify.Event) {
 				return
 			}
 
+			// Uninteresting
+
 			return
 		}
 
@@ -154,6 +161,17 @@ func (cfg *Config) handleWatcherEvent(event fsnotify.Event) {
 				utils.Console.ErrorLn("Error scaffolding domain: %v", err)
 				return
 			}
+
+			watcher.Add(filepath.Join("domains", finalPart))
+
+			return
+		}
+
+		if event.Op&fsnotify.Remove == fsnotify.Remove {
+			// Domain removed
+			utils.Console.DebugLn("Domain removed: %s", finalPart)
+
+			watcher.Remove(filepath.Join("domains", finalPart))
 
 			return
 		}
@@ -198,15 +216,13 @@ func (cfg *Config) scaffoldDomain(name string) error {
 	tree := utils.GeneratedFileTree{}
 
 	tree.SetPrefix("domains/" + name)
-	tree.AddDirectory("adapters/")
-	tree.AddDirectory("model/")
 	tree.AddFile("domain.go", templateDomainExampleDomain, []string{shared.ToolGoFmt})
 	tree.AddFile("ping.go", templateDomainExampleUsecase, []string{shared.ToolGoFmt})
-	tree.AddFile("model/example.go", templateDomainExampleModel, []string{shared.ToolGoFmt})
 
 	err := tree.Generate(map[string]any{
 		"Config":      cfg,
 		"DomainName":  name,
+		"ModelName":   name,
 		"UsecaseName": "ping",
 	})
 	if err != nil {

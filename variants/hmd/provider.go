@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/nfwGytautas/appy-cli/plugins"
 	"github.com/nfwGytautas/appy-cli/utils"
@@ -55,7 +56,7 @@ func (p *Provider) Configure(opts RepositoryConfigureOpts) error {
 
 	// Copy provider files from repository to providers directory
 	sourceDir := filepath.Join(p.Path, "providers")
-	destDir := filepath.Join("providers", p.Name)
+	destDir := filepath.Join("providers", strings.ToLower(p.Name))
 
 	// Create destination directory if it doesn't exist
 	if err := os.MkdirAll(destDir, 0755); err != nil {
